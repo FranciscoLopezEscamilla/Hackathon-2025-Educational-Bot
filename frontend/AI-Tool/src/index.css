@@ -1,0 +1,6 @@
+@import "node_modules/modern-normalize/modern-normalize.css";
+@import "./global/styles/color-scheme.css";
+
+p {
+  max-width: 75ch;
+}
