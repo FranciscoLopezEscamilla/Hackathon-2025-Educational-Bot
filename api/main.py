@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import employee_routes, text_routes
+from routes import employee_routes, text_routes, image_routes, index_routes
 
 app = FastAPI()
 
@@ -8,3 +8,5 @@ app = FastAPI()
 # api/employees/{id} 
 app.include_router(employee_routes.router, prefix="/api")
 app.include_router(text_routes.router, prefix="/api")
+app.include_router(image_routes.router, prefix="/api")
+app.include_router(index_routes.router, prefix="/api")
