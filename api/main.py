@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import employee_routes
+from routes import employee_routes, text_routes
 
 app = FastAPI()
 
@@ -7,3 +7,4 @@ app = FastAPI()
 # api/employees
 # api/employees/{id} 
 app.include_router(employee_routes.router, prefix="/api")
+app.include_router(text_routes.router, prefix="/api")
