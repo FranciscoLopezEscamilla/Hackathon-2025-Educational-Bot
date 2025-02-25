@@ -1,4 +1,4 @@
-from services.index_service import extract_content_from_file, create_vector_store
+from services.index_service import DataBase
 from fastapi.responses import FileResponse
 from fastapi import APIRouter
 import os
@@ -9,9 +9,9 @@ file_path = "C:/Users/p.a.rodriguez.canedo/Documents/Hackaton_2025/api/index_doc
 
 @router.post("/create")
 def create_index():
-    documents = extract_content_from_file(file_path)
+    documents = DataBase().extract_content_from_file(file_path)
     
-    index_path =  create_vector_store(documents)
+    index_path =  DataBase().create_vector_store(documents)
 
     return index_path
     
