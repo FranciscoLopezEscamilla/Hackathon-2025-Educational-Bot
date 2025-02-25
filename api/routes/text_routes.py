@@ -1,9 +1,15 @@
 from fastapi import APIRouter, HTTPException
-from services.text_service import hello_world
+from services.text_service import TextGenerator
+from services.index_service import query_index
+from models.query import Query
 
-router = APIRouter()
+router = APIRouter(prefix="/text", tags=["Text"])
 
-@router.get("/text-generator", response_model=str)
-async def simple_text():
-    name = "pedro"
-    return hello_world(name)
+@router.post("/generate")
+def generate_text(request: Query):
+    
+    context_from_index = query_index(request.query)
+
+    gen_text : str = TextGenerator.get_completion(context=context_from_index)
+
+    return gen_text
