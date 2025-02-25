@@ -5,8 +5,7 @@ from models.llm_clients import LlmUtils
 import os
 
 model = os.getenv('GPT_DEPLOYMENT_NAME')
-llm_utils = LlmUtils()
-client = llm_utils.llm_client()
+client = LlmUtils.llm_client()
 prompt_instance = TextPromptTemplates()
 system_message = prompt_instance.system_prompt
 user_prompt = prompt_instance.user_message
