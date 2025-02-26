@@ -1,4 +1,3 @@
-from services.index_service import load_local_index, format_content
 from services.message_builder import MessageBuilder
 from models.text_prompts import TextPromptTemplates
 from models.llm_clients import LlmUtils

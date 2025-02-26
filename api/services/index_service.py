@@ -6,9 +6,9 @@ import faiss
 import os
 
 dimension = 1536
-embeddings = LlmUtils().embeddings_client()
-parend_dir = os.path.join(os.getcwd(), "index")
-index_path = os.path.join(parend_dir, "faiss_index")
+embeddings = LlmUtils.embeddings_client()
+parent_dir = os.path.join(os.getcwd(), "index")
+index_path = os.path.join(parent_dir, "faiss_index")
 
 class Database():
 
@@ -34,11 +34,11 @@ class Database():
         for document in documents:
             vector_store.add_documents(document)
 
-        vector_store.save_local(os.path.join(parend_dir, "faiss_index"))
-        index_path = os.path.join(parend_dir, "faiss_index")
-        return index_path
+        vector_store.save_local(os.path.join(parent_dir, "faiss_index"))
+        return vector_store
 
     def query_index(query: str):
+        print(index_path)
         vector_store = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
         retriever = vector_store.as_retriever()
         documents = retriever.invoke(query)
