@@ -14,4 +14,4 @@ class Summary(BaseModel):
     conclusion: str
 
 class ImagePrompt(BaseModel):
-    prompt: str
+    prompts: list

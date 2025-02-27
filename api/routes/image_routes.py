@@ -7,6 +7,6 @@ router = APIRouter(prefix="/images", tags=["Images"])
 @router.post("/generate")
 def generate_image(request: ImagePrompt):
 
-    img_url = ImageGenerator.generate_images(request.prompt)
+    img_urls = ImageGenerator.generate_images(request.prompts)
 
-    return img_url
+    return img_urls
