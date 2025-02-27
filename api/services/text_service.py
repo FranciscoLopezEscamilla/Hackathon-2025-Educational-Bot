@@ -38,7 +38,7 @@ class TextGenerator():
         clean_summary = json.loads(summary)
         return clean_summary
     
-    def generate_text_descriptions(text: str, temperature:float = 0.7):
+    def generate_image_descriptions(text: str, temperature:float = 0.7):
         message_builder = MessageBuilder(system_message)
         user_message = description_prompt.format(text = text)
 

@@ -21,9 +21,9 @@ def summarize_content(request: Query):
     return clean_text
 
 @router.post("/descriptions")
-def read_text(request: Summary):
+def generate_descriptions(request: Summary):
 
-    output: str = TextGenerator.generate_text_descriptions(text = request)
+    output: str = TextGenerator.generate_image_descriptions(text = request)
 
     clean_text: str = TextGenerator.parse_text(output)
 
