@@ -7,8 +7,8 @@ import os
 
 dimension = 1536
 embeddings = LlmUtils.embeddings_client()
-parent_dir = os.path.join(os.getcwd(), "index")
-index_path = os.path.join(parent_dir, "faiss_index")
+parent_dir = os.getcwd() + "\\index"
+index_path = parent_dir + "\\faiss_index"
 
 class Database():
 
@@ -23,7 +23,7 @@ class Database():
     def create_vector_store(documents):
 
         index = faiss.IndexFlatL2(dimension)
-
+        
         vector_store = FAISS(
             embedding_function=embeddings,
             index=index,

@@ -5,11 +5,13 @@ from models.query import Query
 
 router = APIRouter(prefix="/text", tags=["Text"])
 
-@router.post("/generate")
-def generate_text(request: Query):
+@router.post("/summarize")
+def summarize_content(request: Query):
     
+    task = "summarization"
     context_from_index = Database.query_index(request.query)
 
-    gen_text : str = TextGenerator.get_completion(context=context_from_index)
+    sum_text : str = TextGenerator.get_completion(context=context_from_index, task=task, query = request.query)
 
-    return gen_text
+    clean_text: str = TextGenerator.parse_text(sum_text)
+    return clean_text

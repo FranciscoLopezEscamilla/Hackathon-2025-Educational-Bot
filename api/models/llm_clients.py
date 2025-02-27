@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from models.configuration_provider import ConfigurationProvider
 from langchain_openai import AzureOpenAIEmbeddings
 from openai import AzureOpenAI
 from dotenv import load_dotenv

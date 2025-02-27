@@ -15,7 +15,7 @@ def create_index():
     documents = Database.extract_content_from_files(files)
     
     vector_store =  Database.create_vector_store(documents)
-
+    
     return {f"Vector store has been created with {vector_store.index.ntotal} documents" }
 
 @router.get("/query")
