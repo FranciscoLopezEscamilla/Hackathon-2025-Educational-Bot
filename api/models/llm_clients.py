@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from models.configuration_provider import ConfigurationProvider
 from langchain_openai import AzureOpenAIEmbeddings
 from openai import AzureOpenAI
 from dotenv import load_dotenv
@@ -12,10 +11,10 @@ version = os.getenv('AZURE_OPENAI_VERSION')
 embeddings_model = os.getenv('EMBEDDINGS_DEPLOYMENT_NAME')
 
 class LlmUtils:
-    def __init__(self):
+    def __init__():
         pass
 
-    def llm_client(self):
+    def llm_client():
             client = AzureOpenAI(
                 azure_endpoint=api_base,
                 api_key=api_key,
@@ -23,7 +22,7 @@ class LlmUtils:
             )
             return client
         
-    def embeddings_client(self):
+    def embeddings_client():
             embeddings = AzureOpenAIEmbeddings(
                 azure_endpoint=api_base,
                 api_key=api_key,

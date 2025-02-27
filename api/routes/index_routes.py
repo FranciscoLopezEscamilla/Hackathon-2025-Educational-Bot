@@ -1,19 +1,26 @@
-from services.index_service import extract_content_from_file, create_vector_store
+from services.index_service import Database
 from fastapi.responses import FileResponse
 from fastapi import APIRouter
+from models.query import Query
+import glob
 import os
 
 router = APIRouter(prefix="/index", tags=["Index"])
 
-file_path = "C:/Users/p.a.rodriguez.canedo/Documents/Hackaton_2025/api/index_documents/UH Onboarding Manual.pdf"
+source_folder = os.getcwd()+"\\index_documents"
+files = glob.glob(source_folder + "/*")
 
 @router.post("/create")
 def create_index():
-    documents = extract_content_from_file(file_path)
+    documents = Database.extract_content_from_files(files)
     
-    index_path =  create_vector_store(documents)
+    vector_store =  Database.create_vector_store(documents)
+    
+    return {f"Vector store has been created with {vector_store.index.ntotal} documents" }
 
-    return index_path
-    
+@router.get("/query")
+def query_index(request: Query):
+    search_results = Database.query_index(request.query)
+    return search_results 
     
    

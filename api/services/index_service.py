@@ -1,38 +1,46 @@
+from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
 from models.llm_clients import LlmUtils
+import faiss
 import os
 
 dimension = 1536
+embeddings = LlmUtils.embeddings_client()
+parent_dir = os.getcwd() + "\\index"
+index_path = parent_dir + "\\faiss_index"
 
-llm_utils = LlmUtils()
-embeddings = llm_utils.embeddings_client()
-full_path = "C:\\Users\\p.a.rodriguez.canedo\\Documents\\Hackaton_2025\\api\\index"
-index_path = os.path.join(full_path, "faiss_index")
+class Database():
 
-def extract_content_from_file(file_path):
-    loader = PyPDFLoader(file_path)
-    pages = loader.load()
-    return pages
+    def extract_content_from_files(files):
+        documents = []
+        for file in files:
+            loader = PyPDFLoader(file)
+            pages = loader.load()
+            documents.append(pages)
+        return documents
 
-def create_vector_store(documents):
-    vector_store = FAISS.from_documents(documents, embeddings)
-    vector_store.save_local(os.path.join(full_path, "faiss_index"))
-    index_path = os.path.join(full_path, "faiss_index")
-    return index_path
+    def create_vector_store(documents):
 
-def load_local_index(path):
-    vector_store = FAISS.load_local(path, embeddings, allow_dangerous_deserialization=True)
-    retriever = vector_store.as_retriever()
-    return retriever
+        index = faiss.IndexFlatL2(dimension)
+        
+        vector_store = FAISS(
+            embedding_function=embeddings,
+            index=index,
+            docstore= InMemoryDocstore(),
+            index_to_docstore_id={}
+        )
 
-def format_content(documents):
-    result_string = "\n\n".join(doc.page_content for doc in documents)
-    return result_string
+        for document in documents:
+            vector_store.add_documents(document)
 
-def query_index(query: str):
-    vector_store = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
-    retriever = vector_store.as_retriever()
-    documents = retriever.invoke(query)
-    results = format_content(documents)
-    return results
+        vector_store.save_local(os.path.join(parent_dir, "faiss_index"))
+        return vector_store
+
+    def query_index(query: str):
+        print(index_path)
+        vector_store = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
+        retriever = vector_store.as_retriever()
+        documents = retriever.invoke(query)
+        result_string = "\n\n".join(doc.page_content for doc in documents)
+        return result_string
