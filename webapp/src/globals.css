@@ -30,3 +30,7 @@
   /* scrollbar-gutter: stable; */
   /* overflow: hidden; */
 }
+
+.gutter-stable {
+  scrollbar-gutter: stable;
+}

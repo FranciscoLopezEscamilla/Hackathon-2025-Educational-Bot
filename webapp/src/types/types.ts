@@ -9,3 +9,15 @@ export interface FolderItem {
   name: string;
   files: string[];
 }
+
+export interface FileItem {
+  id: string;
+  name: string;
+  extension: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  message: string;
+  type: "assistant" | "user" | "system";
+}

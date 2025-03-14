@@ -11,7 +11,7 @@ function RootComponent() {
   return (
     <main className="h-screen w-screen p-4 flex flex-row gap-4 grow box-border">
       <SideNavBar />
-      <section className=" w-full text-neutral-100 flex overflow-auto">
+      <section className=" w-full h-full text-neutral-100 flex overflow-auto">
         <Outlet />
       </section>
     </main>
