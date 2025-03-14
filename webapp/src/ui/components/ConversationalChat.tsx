@@ -8,13 +8,13 @@ import { useChatStore } from "../state/chatStore";
 interface IProps {
   handleChangeMessage: (value: string) => void;
   message: string;
-  addUserMessageToChatHistory: (message: string) => void;
+  handleOnSubmitForm: (message: string) => void;
 }
 
 const ConversationalChat = ({
   handleChangeMessage,
   message,
-  addUserMessageToChatHistory,
+  handleOnSubmitForm,
 }: IProps) => {
   const [selectedAvailableTools, setSelectedAvailableTools] = useState<
     string[]
@@ -69,8 +69,7 @@ const ConversationalChat = ({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    addUserMessageToChatHistory(message);
-    handleChangeMessage("");
+    handleOnSubmitForm(message);
   };
 
   return (

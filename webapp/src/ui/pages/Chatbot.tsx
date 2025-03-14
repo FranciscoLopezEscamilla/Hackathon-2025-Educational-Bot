@@ -18,6 +18,11 @@ const Chatbot = () => {
     setChatHistory({ id: crypto.randomUUID(), message, type: "user" });
   };
 
+  const handleOnSubmitForm = (message: string) => {
+    addUserMessageToChatHistory(message);
+    handleChangeMessage("");
+  };
+
   return (
     <>
       <aside className=" bg-zinc-800 rounded-l-xl border-r-1 border-zinc-700 flex flex-col w-2/9 min-w-70 ">
@@ -42,12 +47,12 @@ const Chatbot = () => {
           <ConversationalChat
             handleChangeMessage={handleChangeMessage}
             message={promptMessage}
-            addUserMessageToChatHistory={addUserMessageToChatHistory}
+            handleOnSubmitForm={handleOnSubmitForm}
           />
         </div>
         {chatHistory.length === 0 && (
           <div className="h-3/7 flex justify-center flex-row flex-wrap box-border overflow-auto content-start gap-2 lg:hidden sm:hidden xl:flex">
-            <PromptSuggestionList handleChangeMessage={handleChangeMessage} />
+            <PromptSuggestionList handleOnSubmitForm={handleOnSubmitForm} />
           </div>
         )}
       </section>
