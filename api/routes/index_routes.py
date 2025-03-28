@@ -21,6 +21,6 @@ def create_index():
 @router.get("/query")
 def query_index(request: Query):
     search_results = Database.query_index(request.query)
-    return search_results 
+    return search_results
     
    
