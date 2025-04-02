@@ -1,4 +1,9 @@
-class Document():
-    name: str
+from pydantic import BaseModel
+
+class Document(BaseModel):
     title: str
-    type: str
+    content: str
+
+class DocumentPost(BaseModel):
+    title: str
+    content: str
