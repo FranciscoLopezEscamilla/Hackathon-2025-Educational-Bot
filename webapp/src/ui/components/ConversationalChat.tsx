@@ -4,6 +4,7 @@ import RemoveIcon from "@/assets/RemoveIcon";
 import { ChatMessage, FileItem } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../state/chatStore";
+import Markdown from "react-markdown";
 
 interface IProps {
   handleChangeMessage: (value: string) => void;
@@ -92,7 +93,7 @@ const ConversationalChat = ({
                       : "self-start rounded-br-xl"
                   }`}
                 >
-                  <p>{content}</p>
+                  <Markdown>{content}</Markdown>
                 </div>
               );
             })}
