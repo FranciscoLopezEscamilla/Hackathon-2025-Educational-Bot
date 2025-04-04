@@ -18,6 +18,6 @@ export interface FileItem {
 
 export interface ChatMessage {
   id: string;
-  message: string;
+  content: string;
   type: "assistant" | "user" | "system";
 }

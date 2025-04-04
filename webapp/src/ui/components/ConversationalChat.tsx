@@ -9,12 +9,14 @@ interface IProps {
   handleChangeMessage: (value: string) => void;
   message: string;
   handleOnSubmitForm: (message: string) => void;
+  loadingChatResponse: boolean;
 }
 
 const ConversationalChat = ({
   handleChangeMessage,
   message,
   handleOnSubmitForm,
+  loadingChatResponse,
 }: IProps) => {
   const [selectedAvailableTools, setSelectedAvailableTools] = useState<
     string[]
@@ -80,7 +82,7 @@ const ConversationalChat = ({
           ref={scrollRef}
         >
           <div className="flex flex-col gap-4 w-full sm:w-full lg:w-5/8 mx-auto my-16">
-            {chatHistory.map(({ id, message, type }: ChatMessage) => {
+            {chatHistory.map(({ id, content, type }: ChatMessage) => {
               return (
                 <div
                   key={id}
@@ -90,10 +92,15 @@ const ConversationalChat = ({
                       : "self-start rounded-br-xl"
                   }`}
                 >
-                  <p>{message}</p>
+                  <p>{content}</p>
                 </div>
               );
             })}
+            {loadingChatResponse && (
+              <div className="flex flex-col w-full sm:w-full lg:w-5/8 animate-pulse ">
+                <p className="text-zinc-400">Thinking...</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -138,7 +145,8 @@ const ConversationalChat = ({
           <button
             type="submit"
             form="prompt-form"
-            className="bg-cyan-800 text-white rounded-md p-2 px-4 hover:bg-cyan-900 transition-all select-none cursor-pointer border-1 border-transparent hover:border-cyan-800 "
+            disabled={loadingChatResponse}
+            className={`bg-cyan-800 text-white rounded-md p-2 px-4 hover:bg-cyan-900 transition-all select-none  border-1 border-transparent hover:border-cyan-800 ${loadingChatResponse ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
             Send
           </button>

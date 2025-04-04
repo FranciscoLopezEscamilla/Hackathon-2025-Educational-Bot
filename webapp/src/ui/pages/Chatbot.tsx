@@ -4,23 +4,43 @@ import ConversationalChat from "@/ui/components/ConversationalChat";
 import PromptSuggestionList from "@/ui/components/PromptSuggestionList";
 import { useState } from "react";
 import { useChatStore } from "../state/chatStore";
+import { callToAgent } from "@/infrastructure/api/agent";
 
 const Chatbot = () => {
   const [promptMessage, setPromptMessage] = useState<string>("");
   const chatHistory = useChatStore((state) => state.chatHistory);
   const setChatHistory = useChatStore((state) => state.addMessageToChatHistory);
+  const [loadingChatResponse, setLoadingChatResponse] =
+    useState<boolean>(false);
 
   const handleChangeMessage = (value: string) => {
     setPromptMessage(value);
   };
 
-  const addUserMessageToChatHistory = (message: string) => {
-    setChatHistory({ id: crypto.randomUUID(), message, type: "user" });
-  };
-
-  const handleOnSubmitForm = (message: string) => {
-    addUserMessageToChatHistory(message);
+  const handleOnSubmitForm = async (message: string) => {
     handleChangeMessage("");
+    setChatHistory({
+      id: crypto.randomUUID(),
+      content: message,
+      type: "user",
+    });
+
+    setLoadingChatResponse(true);
+
+    try {
+      const response = await callToAgent(message, chatHistory);
+      console.log(response);
+      setChatHistory(response.messages[1]);
+    } catch (error) {
+      console.log(error);
+      setChatHistory({
+        id: crypto.randomUUID(),
+        content: "Sorry, I couldn't understand your message.",
+        type: "assistant",
+      });
+    } finally {
+      setLoadingChatResponse(false);
+    }
   };
 
   return (
@@ -35,7 +55,6 @@ const Chatbot = () => {
         <div className="p-4 h-full overflow-y-auto scroll-p-4 ">
           <ContentList folders={[]} />
         </div>
-
         <div className="text-md border-t-1 text-gray-400 border-zinc-700 p-4 flex flex-row gap-2 justify-between">
           <span>Source of information for the chatbot.</span>
         </div>
@@ -48,6 +67,7 @@ const Chatbot = () => {
             handleChangeMessage={handleChangeMessage}
             message={promptMessage}
             handleOnSubmitForm={handleOnSubmitForm}
+            loadingChatResponse={loadingChatResponse}
           />
         </div>
         {chatHistory.length === 0 && (
