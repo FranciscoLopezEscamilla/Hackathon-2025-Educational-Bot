@@ -5,7 +5,7 @@ from models.custom_functions import CustomFunctions
 import json
 import os
 
-model = os.getenv('GPT_DEPLOYMENT_NAME')
+model = os.getenv('AZURE_OPENAI_CHAT_DEPLOYMENT_NAME')
 client = LlmUtils.llm_client()
 prompt_instance = TextPromptTemplates
 functions_instance = CustomFunctions

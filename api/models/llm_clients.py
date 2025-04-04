@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-api_key = os.getenv('AZURE_OPENAI_KEY')
+api_key = os.getenv('AZURE_OPENAI_API_KEY')
 api_base = os.getenv('AZURE_OPENAI_ENDPOINT')
-version = os.getenv('AZURE_OPENAI_VERSION')
-embeddings_model = os.getenv('EMBEDDINGS_DEPLOYMENT_NAME')
+version = os.getenv('AZURE_OPENAI_API_VERSION')
+embeddings_model = os.getenv('AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME')
 
 class LlmUtils:
     def __init__():
