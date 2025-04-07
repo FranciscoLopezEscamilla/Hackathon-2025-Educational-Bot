@@ -8,17 +8,17 @@ router = APIRouter(prefix="/agents", tags=["Agents"])
 @router.post("/multiagent")
 def call_multiagent(request: Query):
 
-    context = RAG.get_context_from_index(request.query)
+    #context = RAG.get_context_from_index(request.query)
 
 
-    #app = MultiAgent.app
+    app = MultiAgent.app
 
-    #response = app.invoke({"messages": [
-    #    request.query,
-    #    context
-    #    ]})
+    response = app.invoke({"messages": [
+        request.query
+        
+        ]})
 
-    return context
+    return response
 
 
 

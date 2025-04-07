@@ -3,6 +3,7 @@ from langchain_core.prompts import PromptTemplate
 from langgraph_supervisor import create_supervisor
 from langgraph.prebuilt import create_react_agent
 from services.text_service import TextService
+from services.rag_service import RAG
 import os
 
 llm = AzureChatOpenAI(
@@ -12,47 +13,35 @@ llm = AzureChatOpenAI(
 
 class MultiAgent:
 
-    def generate_text(context: str, query: str) -> str:
-        """Generates text based on user query and provided context"""
-
-        prompt = """Your job is to respond user query based only in the provided context:
-        HERE IS THE CONTEXT: {context}
-        USER QUERY: {query}
-        """
-
-        template = PromptTemplate.from_template(prompt)
-        chain = template | llm
-
-        response = chain.invoke({"context": context, "query": query})
-
-        return response
-
-    def generate_images(query: str) -> str:
-        """Generate images based on user query"""
-        return f"This is the image agent, input text: {query}"
+    rag_tool = RAG.get_context_from_index
+    text_tool = TextService.generate_text
 
     text_agent = create_react_agent(
         model=llm, 
-        tools=[generate_text],
-        name="text_creator",
-        prompt="You're a smart assistant that generate smart text"
+        tools=[text_tool],
+        name="text_agent",
+        prompt="You are a smart assistant that helps people to train themselfs by generating content for them."
     )
 
-    images_agent = create_react_agent(
-        model=llm,
-        tools=[generate_images],
-        name="image_creator",
-        prompt="You are a world class drawer that generates images and sketches like a pro"
-    )
 
+    rag_agent = create_react_agent(
+        model = llm,
+        tools = [rag_tool],
+        name = "rag_agent",
+        prompt = "You are a smart agent that searchs for content in a vector db"
+    )
 
     workflow = create_supervisor(
-        [text_agent, images_agent],
+        [rag_agent, text_agent],
         model = llm,
         prompt= (
-            "You are a team supervisor managing a images generator and a text expert generator. "
-            "For answering questions based on context, use text_agent. "
-            "For images related queries, use images_agent."
+            "You are a smart agent that works as a router, your job is to decide which agent comes to play"
+            "Agents list: rag_agent, text_agent"
+            "Always start with the rag_agent for searching query from users"
+            "After the rag_agent finishes, transfer the process to the text_agent for generating a response for the user."
+            "Agents description:" \
+            "The rag_agent is able to search user queries in a vector database."
+            "The text_agent can create new content for the user based on the rag_agent output (context)"
      )
     )
 

@@ -10,11 +10,20 @@ llm = LlmUtils.llm_client
 class TextService():
 
     def generate_text(context: str, query: str) -> str:
-        """Generates text based on user query and provided context"""
+        """Generates a response for the user query based on context."""
 
-        prompt = """Your job is to generate summary of a text based on context and user query:
-        HERE IS THE CONTEXT: {context}
-        USER QUERY: {query}
+        prompt = """You are a smart assistant that can generate text based on user query.
+        Your job is to analyze the following user query:
+
+        ### USER QUERY ### 
+        {query}
+
+        Make sure you understand what the user needs based on the query and generate an appropiate response.
+        
+        Use only the following context to generate your response, DO NOT add any information outside the context.
+        ### CONTEXT ### 
+        {context}
+        
         """
 
         template = PromptTemplate.from_template(prompt)
@@ -22,7 +31,7 @@ class TextService():
 
         response = chain.invoke({"context": context, "query": query})
 
-        return response
+        return response.content
         
 
         

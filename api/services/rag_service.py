@@ -15,7 +15,7 @@ embeddings = AzureOpenAIEmbeddings(
 class RAG:
 
     def get_context_from_index(query:str, k:int = 3):
-
+        """This tool retrieves context from knowledge db based on user query"""
         vector_store = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
 
         query_embeddings = embeddings.embed_query(query)
