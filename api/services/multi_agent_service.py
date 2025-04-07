@@ -1,6 +1,10 @@
 from langchain_openai.chat_models.azure import AzureChatOpenAI
+from langchain_core.prompts import PromptTemplate
 from langgraph_supervisor import create_supervisor
 from langgraph.prebuilt import create_react_agent
+from services.text_service import TextService
+from services.rag_service import RAG
+from services.image_service import ImageGenerator
 import os
 
 llm = AzureChatOpenAI(
@@ -10,48 +14,47 @@ llm = AzureChatOpenAI(
 
 class MultiAgent:
 
-    def generate_text(query: str) -> str:
-        """Generate text based on user query"""
-        return f"This is the text agent, input text: {query}"
+    rag_tool = RAG.get_context_from_index
+    text_tool = TextService.generate_text
+    image_tool = ImageGenerator.generate_images
 
-
-    def generate_images(query: str) -> str:
-        """Generate images based on user query"""
-        return f"This is the image agent, input text: {query}"
-
-    def generate_flow_charts(query: str) -> str:
-        """Generate flow charts based on user query"""
-        return f"This is the diagrams agent, input text: {query}"
-    
     text_agent = create_react_agent(
         model=llm, 
-        tools=[generate_text],
-        name="text_creator",
-        prompt="You're a smart assistant that generate funny text"
+        tools=[text_tool],
+        name="text_agent",
+        prompt="You are a smart assistant that helps people to train themselfs by generating content for them."
     )
 
-    images_agent = create_react_agent(
-        model=llm,
-        tools=[generate_images],
-        name="image_creator",
-        prompt="You are a world class drawer that generates images and sketches like a pro"
+    rag_agent = create_react_agent(
+        model = llm,
+        tools = [rag_tool],
+        name = "rag_agent",
+        prompt = "You are a smart agent that searchs for content in a vector db"
     )
 
-    diagrams_agent = create_react_agent(
-        model=llm,
-        tools=[generate_flow_charts],
-        name="diagram_creator",
-        prompt="You are a very smart assistant that can generate flow charts based on provided context."
+    image_agent = create_react_agent(
+        model = llm,
+        tools = [image_tool],
+        name = "image_agent",
+        prompt = "You are a smart agent that can generate helpful images for training documents."
     )
 
     workflow = create_supervisor(
-        [text_agent, images_agent],
+        [rag_agent, text_agent, image_agent],
         model = llm,
         prompt= (
-            "You are a team supervisor managing a images generator and a text expert generator. "
-            "For text and documents queryes, use text_agent. "
-            "For images related queries, use images_agent."
-            "For diagram requests, use diagram_creator agent."
+            "You are a smart agent that works as a router, your job is to decide which agent comes to play"
+            "Agents list: rag_agent, text_agent, image_agent"
+            "For queries related to GenAI in music, or GenAI in art, use the rag_agent."
+            "For queries related to text generation, use the text_agent"
+            "For queries related to images, diagrams, charts, or simple pictures, use the image_agent"
+            "Consider that is possible that the user query needs both: text_agent and image_agent. In this case text_agent will be first and then the image_agent"
+            "Part of your job is to analyze user queries and determine which agent or agents are needed to complete the task."
+            
+            "Agents description:" 
+            "The rag_agent is able to search user queries in a vector database."
+            "The text_agent can create new content for the user based on the rag_agent output (context)"
+            "The image_agent generates images based on user prompts"
      )
     )
 

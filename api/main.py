@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import employee_routes, text_routes, document_generator_routes, index_routes, image_routes, multi_agent_routes
+from routes import employee_routes, multi_agent_routes
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -17,8 +17,8 @@ app.add_middleware(
 # api/employees
 # api/employees/{id} 
 app.include_router(employee_routes.router, prefix="/api")
-app.include_router(text_routes.router, prefix="/api")
-app.include_router(document_generator_routes.router, prefix="/api")
-app.include_router(index_routes.router, prefix="/api")
-app.include_router(image_routes.router, prefix="/api")
+#app.include_router(text_routes.router, prefix="/api")
+#app.include_router(document_generator_routes.router, prefix="/api")
+#app.include_router(index_routes.router, prefix="/api")
+#app.include_router(image_routes.router, prefix="/api")
 app.include_router(multi_agent_routes.router, prefix="/api")
