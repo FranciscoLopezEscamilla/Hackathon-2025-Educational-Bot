@@ -16,7 +16,7 @@ class MultiAgent:
 
     rag_tool = RAG.get_context_from_index
     text_tool = TextService.generate_text
-    image_tool = ImageGenerator.generate_images
+    # image_tool = ImageGenerator.generate_images
 
     text_agent = create_react_agent(
         model=llm, 
@@ -32,29 +32,25 @@ class MultiAgent:
         prompt = "You are a smart agent that searchs for content in a vector db"
     )
 
-    image_agent = create_react_agent(
-        model = llm,
-        tools = [image_tool],
-        name = "image_agent",
-        prompt = "You are a smart agent that can generate helpful images for training documents."
-    )
+    # image_agent = create_react_agent(
+    #     model = llm,
+    #     tools = [image_tool],
+    #     name = "image_agent",
+    #     prompt = "You are a smart agent that can generate helpful images for training documents."
+    # )
 
     workflow = create_supervisor(
-        [rag_agent, text_agent, image_agent],
+        [rag_agent, text_agent],
         model = llm,
         prompt= (
             "You are a smart agent that works as a router, your job is to decide which agent comes to play"
             "Agents list: rag_agent, text_agent, image_agent"
             "For queries related to GenAI in music, or GenAI in art, use the rag_agent."
             "For queries related to text generation, use the text_agent"
-            "For queries related to images, diagrams, charts, or simple pictures, use the image_agent"
-            "Consider that is possible that the user query needs both: text_agent and image_agent. In this case text_agent will be first and then the image_agent"
-            "Part of your job is to analyze user queries and determine which agent or agents are needed to complete the task."
             
             "Agents description:" 
             "The rag_agent is able to search user queries in a vector database."
             "The text_agent can create new content for the user based on the rag_agent output (context)"
-            "The image_agent generates images based on user prompts"
      )
     )
 
