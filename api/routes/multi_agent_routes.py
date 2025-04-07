@@ -18,7 +18,7 @@ def call_multiagent(request: Query):
         
         ]})
 
-    return response
+    return response['messages'][-1].content
 
 
 
