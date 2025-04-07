@@ -30,7 +30,11 @@ const Chatbot = () => {
     try {
       const response = await callToAgent(message, chatHistory);
       console.log(response);
-      setChatHistory(response.messages[1]);
+      setChatHistory({
+        type: "assistant",
+        id: crypto.randomUUID(),
+        content: response,
+      });
     } catch (error) {
       console.log(error);
       setChatHistory({
