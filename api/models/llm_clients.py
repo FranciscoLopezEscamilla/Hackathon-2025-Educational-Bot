@@ -1,4 +1,5 @@
-from langchain_openai import AzureOpenAIEmbeddings, AzureOpenAI
+from langchain_openai import AzureOpenAIEmbeddings
+from openai import AzureOpenAI
 from langchain_openai.chat_models.azure import AzureChatOpenAI
 from dotenv import load_dotenv
 import os
@@ -12,15 +13,8 @@ gpt_model = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME")
 dalle_model = os.getenv("GPT_IMAGES_DEPLOYMENT_NAME")
 
 class LlmUtils:
-    def __init__():
-        pass
     
-    dalle_client = AzureOpenAI(
-          model = dalle_model,
-          api_key=openai_api_key,
-          api_version=openai_api_version,
-          azure_endpoint=openai_api_base
-    )
+    client = AzureOpenAI(azure_endpoint=openai_api_base, api_key=openai_api_key, api_version=openai_api_version)
 
     def llm_client():
             llm = AzureChatOpenAI(
