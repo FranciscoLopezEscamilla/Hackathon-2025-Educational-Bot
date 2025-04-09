@@ -13,9 +13,9 @@ def call_multiagent(request: Query):
     response = app.invoke({"messages": [
         request.query
         
-        ]})
+        ]}, {"recursion_limit": 50})
 
-    return response['messages'][-1].content
+    return response['messages']
 
 
 

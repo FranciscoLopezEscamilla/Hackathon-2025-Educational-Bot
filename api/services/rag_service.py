@@ -1,10 +1,15 @@
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from models.llm_clients import LlmUtils
+from langchain_core.output_parsers import StrOutputParser
 
 import os
 
 index_path =  os.path.normpath(os.getcwd()) + "/index/faiss_index"
 
+llm = LlmUtils.llm_client
 
 embeddings = AzureOpenAIEmbeddings(
                 azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
@@ -15,13 +20,28 @@ embeddings = AzureOpenAIEmbeddings(
 class RAG:
 
     def get_context_from_index(query:str, k:int = 3):
-        """This tool retrieves context from knowledge db based on user query"""
+        """Use this to execute RAG. If the question is related to gen ai in art or music, using this tool retrieve the results."""
+        print("Calling RAG...")
         vector_store = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
-
-        query_embeddings = embeddings.embed_query(query)
-    
-        results = vector_store.similarity_search_with_score_by_vector(embedding=query_embeddings, k=k)
+        retriever = vector_store.as_retriever()
+        template = """Answer questions based only on the following context: 
         
-        result_string = "\n\n".join(doc[0].page_content for doc in results)
+        ### CONTEXT ###
+        {context}
+        
+        Question: {question}
+        
+        If the context doesn't provide enough information to answer the question, say that you don't know.
+        Do not respond with information outside the previous context."""
 
-        return result_string
+        prompt = PromptTemplate.from_template(template)
+
+        chain = (
+            {"context": retriever, "question": RunnablePassthrough()}
+            | prompt
+            | llm
+            | StrOutputParser()
+        )
+
+        result = chain.invoke(query)
+        return result

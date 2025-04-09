@@ -13,9 +13,23 @@ images_folder = os.getcwd() + "\\assets\\generated_images"
 
 class ImageGenerator:
 
+    def regenerate_prompt(self, prompt:str) -> str:
 
-    def generate_images(prompt: str):
-        """Generate images based on queries and prompt from users."""
+        template = """You are a smart assistant that re-write prompts so they can be used to generate images by the dalle-3 model.
+        Your job is to take the following input and re-create a new prompt as an image description for the dalle model
+
+        ### Prompt ###
+        {prompt}
+        """
+
+        prompt_template = PromptTemplate.from_template(template)
+        chain  = prompt_template | llm
+        new_prompt = chain.invoke({"prompt": prompt})
+
+        return new_prompt.content
+
+    def generate_images(self, prompt: str):
+        """Generate images, diagrams, charts, etc., based on prompts"""
 
         sub_folder = (datetime.today().strftime('%Y-%m-%d %H:%M:%S')).replace(" ","-").replace(":","-")
         images_path = os.path.join(images_folder, sub_folder)
@@ -23,7 +37,6 @@ class ImageGenerator:
         if not os.path.exists(images_path):
             os.makedirs(images_path) 
 
-        
         result = client.images.generate(
                     model = model,
                     prompt=prompt,
@@ -31,7 +44,7 @@ class ImageGenerator:
                     )
         
         image_url = json.loads(result.model_dump_json())['data'][0]['url']
-        print(image_url)
+        
         image = requests.get(image_url).content
         image_name = f"genai_img_{uuid4()}"
 
