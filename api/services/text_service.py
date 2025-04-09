@@ -5,7 +5,7 @@ import json
 import os
 
 
-llm = LlmUtils.llm_client
+llm = LlmUtils.llm
 
 class TextService():
 
@@ -37,7 +37,7 @@ class TextService():
    
     def generate_descriptive_text(input: str):
         """Analyzes input text and re write it as a description to generate diagrams"""
-        
+
         prompt = f"""Your job is to analyze this text: {input} 
         and create a detailed prompt to generate an image of a diagram.
         """

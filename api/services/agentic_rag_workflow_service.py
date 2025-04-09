@@ -8,6 +8,9 @@ from langchain_community.vectorstores import FAISS
 import os
 import json
 from IPython.display import Image, display
+from services.rag_service import RAG
+from services.image_service import ImageGenerator
+from services.document_generator_service import DocumentGenerator
 
 
 index_path = os.path.normpath(os.getcwd()) + "/index/faiss_index"
@@ -51,7 +54,8 @@ class AgenticRAGWorkflow:
         self.tools = {
             "image_service": self.image_service,
             "pdf_service": self.pdf_service,
-            "text_service": self.text_service
+            "text_service": self.text_service,
+            "quality_service": self.quality_check
         }
         
         # Build workflow
@@ -69,9 +73,14 @@ class AgenticRAGWorkflow:
     def image_service(context: str, query: str) -> dict:
         """Generate frontend-ready image response"""
         print(" =====> image_service")
+
+        image_prompt =  f"Your job is to generate a detailed prompt to generate an image based on the following text: {context} considering the user request: {query}"
+
+        image_service =  ImageGenerator.generate_images(image_prompt)
+
         return {
             "type": "image",
-            "content": "https://cute.imageofcats.com/img.jpg",
+            "content": image_service,
             "format": "markdown",
             "alt_text": "Generated AI image"
         }
@@ -80,9 +89,21 @@ class AgenticRAGWorkflow:
     def pdf_service(context: str, query: str) -> dict:
         """Generate frontend-ready PDF response"""
         print(" =====> pdf_service")
+
+        prompt = f"""Generate the content for a pdf file based on user query: {query}, 
+        and this context: {context} do not add any information that is not present in context.
+        
+        Please, generate simple content, do not add any special character, symbols, quotation marks, or any marks, just plain text.
+        """
+        content = llm.invoke(prompt).content
+        print(f"pdf content:!!!! {content}")
+        prompt_ = f"Generate a short title for this content: {content}"
+        title = llm.invoke(prompt_).content
+
+        pdf_file = DocumentGenerator.create(title = title, content = content)        
         return {
             "type": "pdf",
-            "content": "https://www.exampledocument.com/genai_doc.pdf",
+            "content": pdf_file,
             "format": "markdown",
             "description": "Generated PDF document"
         }
@@ -90,17 +111,21 @@ class AgenticRAGWorkflow:
     @tool
     def text_service(context: str, query: str) -> dict:
         """Generate formatted text content"""
+        prompt = f"generate a response for the user based on this input: {query}"
+
+        response  = llm.invoke(prompt).content
         return {
             "type": "text",
-            "content": "Generated text content based on context",
+            "content": response,
             "format": "markdown"
         }
-    
+
+
     def check_quality_and_complexity(self, state: AgentState) -> str:
         state["iteration_count"] = state.get("iteration_count", 0) + 1
         max_iterations = 2 
         query_length = len(state["messages"][-1].content.strip())
-        is_simple = query_length < 50
+        is_simple = query_length < 500
         if is_simple or state["iteration_count"] >= max_iterations:
             return "approve"
         else:
@@ -126,6 +151,8 @@ class AgenticRAGWorkflow:
         
         self.workflow.add_edge("execute_tools", "quality_check")
         
+        #self.workflow.add_edge("quality_check", "")
+        
         self.workflow.add_conditional_edges(
             "quality_check",
             self.check_quality_and_complexity,
@@ -136,7 +163,7 @@ class AgenticRAGWorkflow:
 
     def retrieve_context(self, state: AgentState):
         """Retrieve RAG context"""
-        context = "This is a test Context"
+        context = RAG.get_context_from_index(state['messages'][-1].content)
         state["context"] = context
         return state
 
@@ -156,6 +183,8 @@ class AgenticRAGWorkflow:
             "required_components": [list of required component names],
             "reasoning": "<brief explanation>"
         }}
+        After you decide the necessary tools to be used and the tools execution, FINISH the process.
+        
         """
         response = llm.invoke([HumanMessage(content=prompt)]).content
         supervisor_result = self._parse_supervisor_response(response)
@@ -188,6 +217,8 @@ class AgenticRAGWorkflow:
         state["tool_responses"] = results
         return state
 
+
+    #@tool
     def quality_check(self, state: AgentState):
         """Self-reflection quality grader"""
         prompt = f"""Evaluate if responses fully address the user query.
@@ -202,8 +233,11 @@ class AgenticRAGWorkflow:
             "missing_components": [list of missing element types],
             "feedback": "<improvement suggestions>"
         }}
+
+        If the user query requested for an image and the image_service generated one image, mark as completed.
         """
         response = llm.invoke([HumanMessage(content=prompt)]).content
+        print(response)
         quality_result = self._parse_quality_response(response)
         state.update(quality_result)
         return state

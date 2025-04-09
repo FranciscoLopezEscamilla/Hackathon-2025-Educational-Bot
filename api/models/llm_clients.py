@@ -16,13 +16,12 @@ class LlmUtils:
     
     client = AzureOpenAI(azure_endpoint=openai_api_base, api_key=openai_api_key, api_version=openai_api_version)
 
-    def llm_client():
-            llm = AzureChatOpenAI(
+    
+    llm = AzureChatOpenAI(
                 openai_api_version=openai_api_version,
                 azure_deployment=gpt_model,
             )
-            return llm
-        
+           
     def embeddings_client():
             embeddings = AzureOpenAIEmbeddings(
                 azure_endpoint=openai_api_base,

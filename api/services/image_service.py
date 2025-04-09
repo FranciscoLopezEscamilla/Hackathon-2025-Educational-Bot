@@ -7,7 +7,7 @@ import os
 from uuid import uuid4
 
 client = LlmUtils.client
-llm = LlmUtils.llm_client
+llm = LlmUtils.llm
 model = os.getenv('GPT_IMAGES_DEPLOYMENT_NAME')
 images_folder = os.getcwd() + "\\assets\\generated_images"
 
@@ -28,7 +28,7 @@ class ImageGenerator:
 
         return new_prompt.content
 
-    def generate_images(self, prompt: str):
+    def generate_images(prompt: str):
         """Generate images, diagrams, charts, etc., based on prompts"""
 
         sub_folder = (datetime.today().strftime('%Y-%m-%d %H:%M:%S')).replace(" ","-").replace(":","-")

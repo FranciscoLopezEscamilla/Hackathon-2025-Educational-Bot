@@ -9,7 +9,7 @@ import os
 
 index_path =  os.path.normpath(os.getcwd()) + "/index/faiss_index"
 
-llm = LlmUtils.llm_client
+llm = LlmUtils.llm
 
 embeddings = AzureOpenAIEmbeddings(
                 azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
@@ -19,7 +19,7 @@ embeddings = AzureOpenAIEmbeddings(
 
 class RAG:
 
-    def get_context_from_index(query:str, k:int = 3):
+    def get_context_from_index(query:str):
         """Use this to execute RAG. If the question is related to gen ai in art or music, using this tool retrieve the results."""
         print("Calling RAG...")
         vector_store = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
