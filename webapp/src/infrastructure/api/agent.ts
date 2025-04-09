@@ -8,7 +8,7 @@ export const callToAgent = async (
   chatHistory: ChatMessage[]
 ) => {
   const response = await axios.post(
-    `${AGENT_API_BASE_URL}/api/agents/multiagent`,
+    `${AGENT_API_BASE_URL}/api/agents/agentic_rag_v3`,
     {
       query: message,
       messages: chatHistory,
