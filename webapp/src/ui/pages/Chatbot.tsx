@@ -33,7 +33,7 @@ const Chatbot = () => {
       setChatHistory({
         type: "assistant",
         id: crypto.randomUUID(),
-        content: response,
+        content: response.messages[0].content,
       });
     } catch (error) {
       console.log(error);
