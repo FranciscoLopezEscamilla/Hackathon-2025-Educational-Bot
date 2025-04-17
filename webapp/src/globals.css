@@ -34,3 +34,9 @@
 .gutter-stable {
   scrollbar-gutter: stable;
 }
+
+.wrapped-text-markdown {
+  p {
+    overflow-wrap: break-word;
+  }
+}

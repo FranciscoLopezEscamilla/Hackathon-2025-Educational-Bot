@@ -5,6 +5,7 @@ import { ChatMessage, FileItem } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../state/chatStore";
 import Markdown from "react-markdown";
+import TextareaAutosize from "react-textarea-autosize";
 
 interface IProps {
   handleChangeMessage: (value: string) => void;
@@ -87,13 +88,15 @@ const ConversationalChat = ({
               return (
                 <div
                   key={id}
-                  className={`transition-all w-fit max-w-7/10 border-1 border-gray-600 rounded-t-xl px-3 py-2 bg-cyan-900 text-gray-100 ${
+                  className={`transition-all w-fit max-w-7/10 rounded-t-xl px-3 py-2 text-gray-100  ${
                     type === "user"
-                      ? "self-end rounded-bl-xl"
+                      ? "self-end rounded-bl-xl bg-cyan-900 border-gray-600 border-1 "
                       : "self-start rounded-br-xl"
                   }`}
                 >
-                  <Markdown>{content}</Markdown>
+                  <div className="wrapped-text-markdown">
+                    <Markdown>{content}</Markdown>
+                  </div>
                 </div>
               );
             })}
@@ -107,19 +110,20 @@ const ConversationalChat = ({
       )}
       {chatHistory.length === 0 && (
         <h1 className="text-2xl font-semibold">
-          Welcome to ABC Project, accenture.id
+          Welcome to ABC Project, francisco.lopez
         </h1>
       )}
       {/* message box */}
       <div className="w-full sm:w-full lg:w-5/8 bg-zinc-700 rounded-xl p-4 flex flex-col gap-2 box-border">
         <form id="prompt-form" onSubmit={handleSubmit}>
-          <textarea
-            className="w-full h-full text-gray-300 rounded-md outline-none resize-none"
+          <TextareaAutosize
+            minRows={2}
+            className="w-full text-gray-300 rounded-md outline-none resize-none overflow-hidden"
             placeholder="Type your message here..."
             value={message}
             onChange={(e) => handleChangeMessage(e.target.value)}
             required
-          ></textarea>
+          />
         </form>
         <div className="flex flex-row gap-2 justify-between ">
           <span className="flex flex-row gap-4 items-end ">

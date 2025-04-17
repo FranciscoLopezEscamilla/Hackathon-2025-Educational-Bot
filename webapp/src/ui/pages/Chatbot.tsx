@@ -4,7 +4,6 @@ import ConversationalChat from "@/ui/components/ConversationalChat";
 import PromptSuggestionList from "@/ui/components/PromptSuggestionList";
 import { useState } from "react";
 import { useChatStore } from "../state/chatStore";
-import { callToAgent } from "@/infrastructure/api/agent";
 
 const Chatbot = () => {
   const [promptMessage, setPromptMessage] = useState<string>("");
@@ -28,12 +27,13 @@ const Chatbot = () => {
     setLoadingChatResponse(true);
 
     try {
-      const response = await callToAgent(message, chatHistory);
-      console.log(response);
+      // const response = await callToAgent(message, chatHistory);
+      // console.log(response);
       setChatHistory({
         type: "assistant",
         id: crypto.randomUUID(),
-        content: response.messages[0].content,
+        content:
+          "This is a test response Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch",
       });
     } catch (error) {
       console.log(error);
