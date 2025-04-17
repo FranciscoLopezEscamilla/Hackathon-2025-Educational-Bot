@@ -8,4 +8,11 @@ export const useChatStore = create((set): any => ({
     set((state: any) => ({
       chatHistory: [...state.chatHistory, message],
     })),
+  removeMessagesFromChatHistory: (amount: number) =>
+    set((state: any) => ({
+      chatHistory: state.chatHistory.slice(
+        0,
+        state.chatHistory.length - amount
+      ),
+    })),
 }));

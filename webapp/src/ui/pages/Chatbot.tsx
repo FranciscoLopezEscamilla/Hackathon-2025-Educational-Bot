@@ -9,6 +9,9 @@ const Chatbot = () => {
   const [promptMessage, setPromptMessage] = useState<string>("");
   const chatHistory = useChatStore((state) => state.chatHistory);
   const setChatHistory = useChatStore((state) => state.addMessageToChatHistory);
+  const removeMessagesFromChatHistory = useChatStore(
+    (state) => state.removeMessagesFromChatHistory
+  );
   const [loadingChatResponse, setLoadingChatResponse] =
     useState<boolean>(false);
 
@@ -47,6 +50,13 @@ const Chatbot = () => {
     }
   };
 
+  const reSendLastMessage = () => {
+    removeMessagesFromChatHistory(2);
+    const lastMessage = chatHistory[chatHistory.length - 2];
+    console.log(lastMessage);
+    handleOnSubmitForm(lastMessage.content);
+  };
+
   return (
     <>
       <aside className=" bg-zinc-800 rounded-l-xl border-r-1 border-zinc-700 flex flex-col w-2/9 min-w-70 ">
@@ -72,6 +82,7 @@ const Chatbot = () => {
             message={promptMessage}
             handleOnSubmitForm={handleOnSubmitForm}
             loadingChatResponse={loadingChatResponse}
+            reSendLastMessage={reSendLastMessage}
           />
         </div>
         {chatHistory.length === 0 && (

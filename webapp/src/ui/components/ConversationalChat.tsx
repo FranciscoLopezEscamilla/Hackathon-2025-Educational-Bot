@@ -6,12 +6,15 @@ import { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../state/chatStore";
 import Markdown from "react-markdown";
 import TextareaAutosize from "react-textarea-autosize";
+import { CopyIcon } from "@/assets/CopyIcon";
+import { ArrowPath } from "@/assets/ArrowPath";
 
 interface IProps {
   handleChangeMessage: (value: string) => void;
   message: string;
   handleOnSubmitForm: (message: string) => void;
   loadingChatResponse: boolean;
+  reSendLastMessage: () => void;
 }
 
 const ConversationalChat = ({
@@ -19,6 +22,7 @@ const ConversationalChat = ({
   message,
   handleOnSubmitForm,
   loadingChatResponse,
+  reSendLastMessage,
 }: IProps) => {
   const [selectedAvailableTools, setSelectedAvailableTools] = useState<
     string[]
@@ -88,9 +92,9 @@ const ConversationalChat = ({
               return (
                 <div
                   key={id}
-                  className={`transition-all w-fit max-w-7/10 rounded-t-xl px-3 py-2 text-gray-100  ${
+                  className={`transition-all w-fit max-w-7/10 rounded-t-xl  py-2 text-gray-100  ${
                     type === "user"
-                      ? "self-end rounded-bl-xl bg-cyan-900 border-gray-600 border-1 "
+                      ? "self-end rounded-bl-xl bg-cyan-900 border-gray-600 border-1 px-3"
                       : "self-start rounded-br-xl"
                   }`}
                 >
@@ -105,6 +109,24 @@ const ConversationalChat = ({
                 <p className="text-zinc-400">Thinking...</p>
               </div>
             )}
+            <div className="flex flex-row w-full gap-1">
+              <button
+                className="px-2 py-1 text-zinc-400 rounded-md align-middle hover:bg-zinc-700 cursor-pointer transition-all select-none"
+                onClick={() =>
+                  navigator.clipboard.writeText(
+                    chatHistory[chatHistory.length - 1].content
+                  )
+                }
+              >
+                <CopyIcon size="16" />
+              </button>
+              <button
+                className="px-2 py-1 text-zinc-400 rounded-md align-middle hover:bg-zinc-700 cursor-pointer transition-all select-none"
+                onClick={reSendLastMessage}
+              >
+                <ArrowPath size="16" />
+              </button>
+            </div>
           </div>
         </div>
       )}
