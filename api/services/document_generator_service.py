@@ -2,12 +2,12 @@ import os
 from fpdf import FPDF
 
 class DocumentGenerator():
-    @staticmethod
+    #@staticmethod
     def create(title: str, content: str) -> str:
         # create directory if tit does not exist
         output_dir: str = "output"
         os.makedirs(output_dir, exist_ok=True)
-        file_path = os.path.join(output_dir, "Sample_PDF_document.pdf")
+        file_path = os.path.join(output_dir, "sample_file_from_agent.pdf")
 
         # create the PDF file
         pdf = FPDF()
