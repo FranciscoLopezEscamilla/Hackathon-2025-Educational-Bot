@@ -106,7 +106,6 @@ const ConversationalChat = ({
                 </div>
               );
             })}
-            <>{console.log(loadingChatResponse)}</>
             {loadingChatResponse && (
               <div className="flex flex-col w-full sm:w-full lg:w-5/8 animate-pulse ">
                 <p className="text-zinc-400">Thinking...</p>

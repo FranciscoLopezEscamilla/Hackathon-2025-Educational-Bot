@@ -1,12 +1,9 @@
-import { ChatMessage } from "@/types/types";
+import { Message } from "@/types/types";
 import axios from "axios";
 
 const AGENT_API_BASE_URL = "http://127.0.0.1:8000";
 
-export const callToAgent = async (
-  message: string,
-  chatHistory: ChatMessage[]
-) => {
+export const callToAgent = async (message: string, chatHistory: Message[]) => {
   const response = await axios.post(
     `${AGENT_API_BASE_URL}/api/agents/agentic_rag_v3`,
     {
