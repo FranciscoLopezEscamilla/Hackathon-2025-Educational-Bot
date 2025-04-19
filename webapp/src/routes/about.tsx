@@ -14,7 +14,6 @@ function RouteComponent() {
 
   useEffect(() => {
     loadHistory().then((history) => {
-      console.log("history loaded ==>", history);
       setHistory(history);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

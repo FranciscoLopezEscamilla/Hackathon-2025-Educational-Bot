@@ -67,7 +67,6 @@ const Chatbot = () => {
 
   useEffect(() => {
     loadHistory().then((history) => {
-      console.log("history loaded ==>", history);
       setHistory(history);
     });
 
@@ -83,13 +82,11 @@ const Chatbot = () => {
   }, []);
 
   useEffect(() => {
-    console.log("messages changed ==>", messages);
     const newChatsState = [...chats];
 
     if (id && messages.length > 0) {
       const foundChatIndex = newChatsState.findIndex((chat) => chat.id === id);
       if (foundChatIndex !== -1) {
-        console.log(messages);
         newChatsState[foundChatIndex].messages = messages;
         saveHistory({
           chats: newChatsState,
@@ -114,7 +111,6 @@ const Chatbot = () => {
   const reSendLastMessage = () => {
     removeMessagesFromChat(2);
     const lastMessage = messages[messages.length - 2];
-    console.log(lastMessage);
     handleOnSubmitForm(lastMessage.content);
   };
 
