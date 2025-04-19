@@ -1,13 +1,13 @@
 import AttachmentIcon from "@/assets/AttachmentIcon";
 import ImageIcon from "@/assets/ImageIcon";
 import RemoveIcon from "@/assets/RemoveIcon";
-import { ChatMessage, FileItem } from "@/types/types";
+import { Message, FileItem } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
-import { useChatStore } from "../state/chatStore";
 import Markdown from "react-markdown";
 import TextareaAutosize from "react-textarea-autosize";
 import { CopyIcon } from "@/assets/CopyIcon";
 import { ArrowPath } from "@/assets/ArrowPath";
+import { useChatStore } from "@/ui/state/chatStore";
 
 interface IProps {
   handleChangeMessage: (value: string) => void;
@@ -15,6 +15,7 @@ interface IProps {
   handleOnSubmitForm: (message: string) => void;
   loadingChatResponse: boolean;
   reSendLastMessage: () => void;
+  showToast: (message: string) => void;
 }
 
 const ConversationalChat = ({
@@ -23,12 +24,13 @@ const ConversationalChat = ({
   handleOnSubmitForm,
   loadingChatResponse,
   reSendLastMessage,
+  showToast,
 }: IProps) => {
   const [selectedAvailableTools, setSelectedAvailableTools] = useState<
     string[]
   >([]);
   const [uploadedFiles, setUploadedFiles] = useState<FileItem[]>([]);
-  const chatHistory = useChatStore((state) => state.chatHistory);
+  const chatHistory = useChatStore((state) => state.messages);
   const scrollRef = useRef<HTMLInputElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
 
@@ -88,7 +90,7 @@ const ConversationalChat = ({
           ref={scrollRef}
         >
           <div className="flex flex-col gap-4 w-full sm:w-full lg:w-5/8 mx-auto my-16">
-            {chatHistory.map(({ id, content, type }: ChatMessage) => {
+            {chatHistory.map(({ id, content, type }: Message) => {
               return (
                 <div
                   key={id}
@@ -104,6 +106,7 @@ const ConversationalChat = ({
                 </div>
               );
             })}
+            <>{console.log(loadingChatResponse)}</>
             {loadingChatResponse && (
               <div className="flex flex-col w-full sm:w-full lg:w-5/8 animate-pulse ">
                 <p className="text-zinc-400">Thinking...</p>
@@ -112,11 +115,12 @@ const ConversationalChat = ({
             <div className="flex flex-row w-full gap-1">
               <button
                 className="px-2 py-1 text-zinc-400 rounded-md align-middle hover:bg-zinc-700 cursor-pointer transition-all select-none"
-                onClick={() =>
+                onClick={() => {
                   navigator.clipboard.writeText(
                     chatHistory[chatHistory.length - 1].content
-                  )
-                }
+                  );
+                  showToast("Message copied to clipboard");
+                }}
               >
                 <CopyIcon size="16" />
               </button>
