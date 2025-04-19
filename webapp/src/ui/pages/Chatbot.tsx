@@ -70,6 +70,15 @@ const Chatbot = () => {
       console.log("history loaded ==>", history);
       setHistory(history);
     });
+
+    return () => {
+      //reset the state when the component is unmounted
+      loadState({
+        messages: [],
+        id: null,
+        updatedAt: new Date().toISOString(),
+      });
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -98,6 +107,7 @@ const Chatbot = () => {
         });
       }
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, id]);
 

@@ -17,9 +17,10 @@ function RouteComponent() {
       console.log("history loaded ==>", history);
       setHistory(history);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleDeleteChat = async (id: string) => {
+  const handleDeleteChat = async (id: string | null) => {
     const newChatsState = [...chats];
     const filteredChats = newChatsState.filter((chat) => chat.id !== id);
     setHistory({

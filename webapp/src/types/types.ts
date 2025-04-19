@@ -23,7 +23,7 @@ export interface ChatHistory {
 }
 
 export interface Chat {
-  id: string;
+  id: string | null;
   updatedAt: string;
   messages: Message[];
 }
