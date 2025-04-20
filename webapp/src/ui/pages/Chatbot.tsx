@@ -8,6 +8,7 @@ import { historyStore } from "../state/historyStore";
 import { showSuccessToast } from "../utils/toast";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { loadHistory, saveHistory } from "../utils/persistentStorage";
+import { callToAgent } from "@/infrastructure/api/agent";
 
 const Chatbot = () => {
   const { id: paramId } = useParams({ strict: false });
@@ -44,11 +45,13 @@ const Chatbot = () => {
     setLoadingChatResponse(true);
 
     try {
-      addMessageToChat({
-        type: "assistant",
-        id: crypto.randomUUID(),
-        content: "This is a test response",
-      });
+      const response = await callToAgent(message, messages);
+      addMessageToChat(response.messages[response.messages.length - 1]);
+      // addMessageToChat({
+      //   type: "assistant",
+      //   id: crypto.randomUUID(),
+      //   content: "This is a test response",
+      // });
     } catch (error) {
       console.log(error);
       addMessageToChat({

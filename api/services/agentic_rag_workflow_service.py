@@ -1,316 +1,180 @@
 from langchain_openai.chat_models.azure import AzureChatOpenAI
-from langchain_openai.embeddings.azure import AzureOpenAIEmbeddings
-from langgraph.graph import StateGraph, END
-from typing import TypedDict, List, Annotated, Optional
+from typing import TypedDict, List, Optional
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_community.vectorstores import FAISS
-import os
-import json
-from IPython.display import Image, display
+from langgraph.graph import StateGraph, END
 from services.rag_service import RAG
 from services.image_service import ImageGenerator
 from services.document_generator_service import DocumentGenerator
+import os
 
-
-index_path = os.path.normpath(os.getcwd()) + "/index/faiss_index"
-print(index_path)
-
+# Initialize LLM client
 llm = AzureChatOpenAI(
     openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
     azure_deployment=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"),
 )
 
-def last_message_reducer(existing, update):
-    return update 
-
 class AgentState(TypedDict):
-    messages: Annotated[List[HumanMessage | AIMessage], last_message_reducer]
+    messages: List[HumanMessage | AIMessage]
     context: Optional[str]
+    used_tools: List[str]
+    needed_tools: List[str]
+    supervisor_feedback: Optional[str]
     tool_responses: dict
-    needs_refinement: bool
-    required_components: List[str]
-    needs_text: bool
-    needs_images: bool
-    needs_pdf: bool
+    direct_response: Optional[str]
     iteration_count: int
 
 class AgenticRAGWorkflow:
     def __init__(self):
-        print("init")
-        # Optional: Initialize RAG components, such as embeddings and vector store.
-        # self.embeddings = AzureOpenAIEmbeddings(
-        #     azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
-        #     api_key=os.getenv('AZURE_OPENAI_API_KEY'),
-        #     azure_deployment=os.getenv('AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME')
-        # )
-        # self.vector_store = FAISS.load_local(
-        #     index_path,
-        #     self.embeddings,
-        #     allow_dangerous_deserialization=True
-        # )
-        
-        # Initialize tools
+        # Map tool names to their decorators for external invocation
         self.tools = {
-            "image_service": self.image_service,
-            "pdf_service": self.pdf_service,
-            "text_service": self.text_service,
-            "quality_service": self.quality_check
+            "context_service": self.context_service_tool,
+            "text_service": self.text_service_tool,
+            "image_service": self.image_service_tool,
+            "pdf_service": self.pdf_service_tool,
         }
-        
-        # Build workflow
+        # Build workflow graph
         self.workflow = StateGraph(AgentState)
         self._build_workflow()
-
         self.chain = self.workflow.compile()
-        try:
-            display(Image(self.chain.get_graph().draw_mermaid_png()))
-        except Exception:
-            pass
 
-    # Tool definitions
+    # External tool wrappers
     @tool
-    def image_service(context: str, query: str) -> dict:
-        """Generate frontend-ready image response"""
-        print(" =====> image_service")
-
-        image_prompt =  f"Your job is to generate a detailed prompt to generate an image based on the following text: {context} considering the user request: {query}"
-
-        image_service =  ImageGenerator.generate_images(image_prompt)
-
-        return {
-            "type": "image",
-            "content": image_service,
-            "format": "markdown",
-            "alt_text": "Generated AI image"
-        }
+    def context_service_tool(self, query: str) -> str:
+        """Retrieve relevant textual context for a user query from the RAG index."""
+        return self._get_context(query)
 
     @tool
-    def pdf_service(context: str, query: str) -> dict:
-        """Generate frontend-ready PDF response"""
-        print(" =====> pdf_service")
-
-        prompt = f"""Generate the content for a pdf file based on user query: {query}, 
-        and this context: {context} do not add any information that is not present in context.
-        
-        Please, generate simple content, do not add any special character, symbols, quotation marks, or any marks, just plain text.
-        """
-        content = llm.invoke(prompt).content
-        print(f"pdf content:!!!! {content}")
-        prompt_ = f"Generate a short title for this content: {content}"
-        title = llm.invoke(prompt_).content
-
-        pdf_file = DocumentGenerator.create(title = title, content = content)        
-        return {
-            "type": "pdf",
-            "content": pdf_file,
-            "format": "markdown",
-            "description": "Generated PDF document"
-        }
+    def text_service_tool(self, context: str, query: str) -> dict:
+        """Generate a plain-text answer based on context and user query."""
+        return self._generate_text(context, query)
 
     @tool
-    def text_service(context: str, query: str) -> dict:
-        """Generate formatted text content"""
-        prompt = f"generate a response for the user based on this input: {query}"
+    def image_service_tool(self, context: str, query: str) -> dict:
+        """Produce image-generation prompts and fetch images based on context and query."""
+        return self._generate_image(context, query)
 
-        response  = llm.invoke(prompt).content
-        return {
-            "type": "text",
-            "content": response,
-            "format": "markdown"
-        }
+    @tool
+    def pdf_service_tool(self, context: str, query: str) -> dict:
+        """Create a PDF document with content generated from the query and context."""
+        return self._generate_pdf(context, query)
 
+    # Internal implementations
+    def _get_context(self, query: str) -> str:
+        return RAG.get_context_from_index(query)
 
-    def check_quality_and_complexity(self, state: AgentState) -> str:
-        state["iteration_count"] = state.get("iteration_count", 0) + 1
-        max_iterations = 2 
-        query_length = len(state["messages"][-1].content.strip())
-        is_simple = query_length < 500
-        if is_simple or state["iteration_count"] >= max_iterations:
-            return "approve"
-        else:
-            return "refine"
+    def _generate_text(self, context: str, query: str) -> dict:
+        response = llm.invoke([HumanMessage(content=query)]).content
+        return {"type": "text", "content": response}
 
+    def _generate_image(self, context: str, query: str) -> dict:
+        prompt = f"Generate image prompt from context: {context} request: {query}"
+        images = ImageGenerator.generate_images(prompt)
+        return {"type": "image", "content": images}
 
+    def _generate_pdf(self, context: str, query: str) -> dict:
+        content = llm.invoke([HumanMessage(content=query)]).content
+        title = llm.invoke([HumanMessage(content=f"Title for: {content}")]).content
+        pdf_file = DocumentGenerator.create(title=title, content=content)
+        return {"type": "pdf", "content": pdf_file}
 
     def _build_workflow(self):
-        self.workflow.add_node("retrieve_context", self.retrieve_context)
         self.workflow.add_node("supervisor", self.supervisor)
         self.workflow.add_node("execute_tools", self.execute_tools)
         self.workflow.add_node("quality_check", self.quality_check)
         self.workflow.add_node("format_response", self.format_response)
 
-        self.workflow.set_entry_point("retrieve_context")
-        self.workflow.add_edge("retrieve_context", "supervisor")
-        
+        self.workflow.set_entry_point("supervisor")
         self.workflow.add_conditional_edges(
             "supervisor",
             self.route_tools,
-            {"continue": "execute_tools", "respond": "format_response"}
+            {"execute": "execute_tools", "respond": "format_response"}
         )
-        
         self.workflow.add_edge("execute_tools", "quality_check")
-        
-        
         self.workflow.add_conditional_edges(
             "quality_check",
-            self.check_quality_and_complexity,
-            {"refine": "supervisor", "approve": "format_response"}
+            lambda state: "execute" if state.get("needs_refinement") else "respond",
+            {"execute": "execute_tools", "respond": "format_response"}
         )
-        
         self.workflow.add_edge("format_response", END)
 
-    def retrieve_context(self, state: AgentState):
-        """Retrieve RAG context"""
-        context = RAG.get_context_from_index(state['messages'][-1].content)
-        state["context"] = context
+    def supervisor(self, state: AgentState) -> AgentState:
+        user_query = state["messages"][-1].content
+        # Direct answer if simple and second pass
+        if len(user_query) < 100 and state["iteration_count"] >= 1:
+            state["direct_response"] = llm.invoke([HumanMessage(content=user_query)]).content
+            return state
+
+        # Retrieve context directly
+        state["context"] = self._get_context(user_query)
+
+        # Heuristic tool selection
+        needs = []
+        if "image" in user_query.lower():
+            needs.append("image_service")
+        if "pdf" in user_query.lower():
+            needs.append("pdf_service")
+        if not needs:
+            needs.append("text_service")
+
+        state["needed_tools"] = needs
+        state["supervisor_feedback"] = f"Using tools: {needs}"
+        state["iteration_count"] += 1
         return state
 
-    def supervisor(self, state: AgentState):
-        """Decide which tools to use"""
-        prompt = f"""Analyze the user request and available context to determine needed tools.
-        User Input: {state["messages"][-1].content}
-        Context: {state.get("context", "")}
-
-        Available Tools: image_service, pdf_service, text_service
-
-        Return ONLY valid JSON in the following format (with no extra text):
-        {{
-            "needs_text": <true or false>,
-            "needs_images": <true or false>,
-            "needs_pdf": <true or false>,
-            "required_components": [list of required component names],
-            "reasoning": "<brief explanation>"
-        }}
-        After you decide the necessary tools to be used and the tools execution, FINISH the process.
-        
-        """
-        response = llm.invoke([HumanMessage(content=prompt)]).content
-        supervisor_result = self._parse_supervisor_response(response)
-        state.update(supervisor_result)
-        return state
-    
-
-    def execute_tools(self, state: AgentState):
-        """Execute selected tools using direct invocation"""
+    def execute_tools(self, state: AgentState) -> AgentState:
         results = {}
-        if state.get("needs_text"):
-            print("Invoking text_service")
-            results["text"] = self.text_service.invoke({
-                "context": state["context"],
-                "query": state["messages"][-1].content
-            })
-        if state.get("needs_images"):
-            print("Invoking image_service")
-            results["image"] = self.image_service.invoke({
-                "context": state["context"],
-                "query": state["messages"][-1].content
-            })
-        if state.get("needs_pdf"):
-            print("Invoking pdf_service")
-            results["pdf"] = self.pdf_service.invoke({
-                "context": state["context"],
-                "query": state["messages"][-1].content
-            })
-        
+        for tool_name in state.get("needed_tools", []):
+            # Call internal implementation to avoid wrapper schema
+            if tool_name == "text_service":
+                out = self._generate_text(state["context"], state["messages"][-1].content)
+            elif tool_name == "image_service":
+                out = self._generate_image(state["context"], state["messages"][-1].content)
+            else:  # pdf_service
+                out = self._generate_pdf(state["context"], state["messages"][-1].content)
+            results[tool_name] = out
+            state["used_tools"].append(tool_name)
+
         state["tool_responses"] = results
         return state
 
-
-    #@tool
-    def quality_check(self, state: AgentState):
-        """Self-reflection quality grader"""
-        prompt = f"""Evaluate if responses fully address the user query.
-        User Query: {state["messages"][-1].content}
-        Context: {state.get("context", "")}
-        Tool Outputs: {json.dumps(state["tool_responses"], indent=2)}
-        Required Components: {state.get("required_components", [])}
-
-        Return ONLY valid JSON in the following format:
-        {{
-            "approved": <true or false>,
-            "missing_components": [list of missing element types],
-            "feedback": "<improvement suggestions>"
-        }}
-
-        If the user query requested for an image and the image_service generated one image, mark as completed.
-        """
-        response = llm.invoke([HumanMessage(content=prompt)]).content
-        print(response)
-        quality_result = self._parse_quality_response(response)
-        state.update(quality_result)
+    def quality_check(self, state: AgentState) -> AgentState:
+        state["needs_refinement"] = not bool(state.get("tool_responses"))
         return state
 
-    def format_response(self, state: AgentState):
-        """Generate frontend-ready formatted response and trim message history"""
-        prompt = f"""Compile final response with proper formatting:
-        Components: {json.dumps(state.get("tool_responses", {}), indent=2)}
+    def format_response(self, state: AgentState) -> dict:
+        if state.get("direct_response"):
+            return {"messages": [AIMessage(content=state["direct_response"]) ]}
 
-        Formatting Rules:
-        - Images: ![alt](url)
-        - PDFs: [description](url)
-        - Text: Clear paragraphs with markdown formatting
-        - Include all generated components
+        parts = []
+        for resp in state.get("tool_responses", {}).values():
+            if resp["type"] == "text":
+                parts.append(resp["content"])
+            elif resp["type"] == "image":
+                parts.append(f"![image]({resp['content']})")
+            else:
+                parts.append(f"[PDF document]({resp['content']})")
+        final = "\n\n".join(parts)
+        return {"messages": [AIMessage(content=final)]}
 
-        if response used pdf or image generation, exclude details from response
-        """
-
-        # User Query: {state["messages"][-1].content}
-        # Context: {state.get("context", "")}
-
-        formatted = llm.invoke([HumanMessage(content=prompt)]).content
-        # state["messages"] = state["messages"][-1:]
-        return {"messages": [AIMessage(content=formatted)], "needs_refinement": False}
-
-    def _parse_supervisor_response(self, response: str) -> dict:
-        try:
-            decision = json.loads(response)
-            return {
-                "needs_text": bool(decision.get("needs_text", False)),
-                "needs_images": bool(decision.get("needs_images", False)),
-                "needs_pdf": bool(decision.get("needs_pdf", False)),
-                "required_components": decision.get("required_components", []),
-            }
-        except json.JSONDecodeError:
-            print("JSON decoding error for supervisor response:", response)
-            return {"needs_text": True, "needs_images": False, "needs_pdf": False, "required_components": []}
-
-    def _parse_quality_response(self, response: str) -> dict:
-        try:
-            evaluation = json.loads(response)
-            return {
-                "needs_refinement": not evaluation.get("approved", False),
-                "required_components": evaluation.get("missing_components", []),
-            }
-        except json.JSONDecodeError:
-            return {"needs_refinement": True, "required_components": []}
-
-    def route_tools(self, state: AgentState):
-        if any([state.get("needs_text"), state.get("needs_images"), state.get("needs_pdf")]):
-            return "continue"
-        return "respond"
-
-    def check_quality(self, state: AgentState):
-        if state.get("needs_refinement", False):
-            return "refine"
-        return "approve"
+    def route_tools(self, state: AgentState) -> str:
+        return "respond" if state.get("direct_response") else "execute"
 
     def __call__(self, user_input: str):
         initial_state: AgentState = {
             "messages": [HumanMessage(content=user_input)],
             "context": None,
+            "used_tools": [],
+            "needed_tools": [],
+            "supervisor_feedback": None,
             "tool_responses": {},
-            "needs_refinement": False,
-            "required_components": [],
-            "needs_text": False,
-            "needs_images": False,
-            "needs_pdf": False,
+            "direct_response": None,
             "iteration_count": 0
         }
         return self.chain.invoke(initial_state)
 
-# Usage example
+# Example Usage
 if __name__ == "__main__":
-    workflow = AgenticRAGWorkflow()
-    response = workflow("Explain quantum computing with visual examples")
-    print(response["messages"][-1].content)
+    agent = AgenticRAGWorkflow()
+    resp = agent("Generate an overview of machine learning as PDF and visual examples")
+    print(resp["messages"][-1].content)
