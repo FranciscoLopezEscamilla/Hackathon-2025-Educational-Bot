@@ -1,0 +1,15 @@
+digraph {
+	A [label="Connect printer to computer and power source."]
+	B [label="Go to My Devices (Windows) or Printers and Scanners (Mac)."]
+	C [label="Click Add Device and select your printer."]
+	D [label="Print a test page to ensure your printer works."]
+	E [label=image image="../api/assets/generated_images/2025-02-27-14-58-20/genai_img_9a12a22b-ccdf-4828-bfdd-9cac4971f474.jpg"]
+	F [label=image2 image="../api/assets/generated_images/2025-02-27-15-29-10/genai_img_b4b09826-76bb-4cc4-a268-730cda29bac7.jpg"]
+	G [label=image3 image="../api/assets/generated_images/2025-04-21-11-41-22/genai_img_8526fe6d-8f7e-406d-8060-8d0892fd6f3d.jpg"]
+	A -> B [label=Connect]
+	B -> C [label=Next]
+	C -> D [label=Confirm]
+	D -> E
+	E -> F
+	F -> G
+}
