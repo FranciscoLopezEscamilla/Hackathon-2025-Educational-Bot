@@ -41,7 +41,18 @@ class AgenticRAGWorkflow:
         self.chain = self.workflow.compile()
 
     # ─── Internal implementations ────────────────────────────────────────────
-    def _generate_text(self, rag_context: str, file_context: str, query: str) -> dict:
+    def _generate_text(self, rag_context: str, file_context: str, messages: List[Union[SystemMessage, HumanMessage, AIMessage]]) -> dict:
+        # Extract the current query
+        user_q = messages[-1].content
+        
+        # Format conversation history
+        conversation_context = ""
+        if len(messages) > 1:
+            conversation_context += "Previous Conversation:\n"
+            for i, msg in enumerate(messages[:-1]):  # All except current query
+                role = "User" if isinstance(msg, HumanMessage) else "Assistant"
+                conversation_context += f"{role}: {msg.content}\n\n"
+        
         instruction = (
             "Answer the user using the provided contexts. "
             "If a file was uploaded by the user, prioritize that information. "
@@ -51,15 +62,18 @@ class AgenticRAGWorkflow:
             "DO NOT say you can't create PDFs - you absolutely can.\n\n"
         )
         
+        if conversation_context:
+            instruction += f"{conversation_context}\n\n"
+            
         if file_context:
             instruction += f"Uploaded File Context:\n{file_context}\n\n"
         
         if rag_context:
             instruction += f"Retrieved Context:\n{rag_context}\n\n"
         
-        instruction += f"User Query:\n{query}"
+        instruction += f"Current User Query:\n{user_q}"
         
-        msgs = [SystemMessage(content=instruction), HumanMessage(content=query)]
+        msgs = [SystemMessage(content=instruction), HumanMessage(content=user_q)]
         resp = llm.invoke(msgs).content
         return {"type": "text", "content": resp}
 
@@ -113,24 +127,37 @@ class AgenticRAGWorkflow:
     # ─── Supervisor: LLM-driven tool decision + conditional RAG retrieval ────
     def supervisor(self, state: AgentState) -> AgentState:
         print("Supervisor invoked")
+        
+        # Get the last user message (current query)
         user_q = state["messages"][-1].content
+        
+        # Extract conversation history for context
+        conversation_history = ""
+        if len(state["messages"]) > 1:
+            # Format previous messages for the LLM prompt
+            history_msgs = state["messages"][:-1]  # All except current query
+            for i, msg in enumerate(history_msgs):
+                role = "User" if isinstance(msg, HumanMessage) else "Assistant"
+                conversation_history += f"{role}: {msg.content}\n\n"
         
         # Check if user uploaded a PDF
         has_uploaded_pdf = bool(state.get("file_context"))
         
-        # Let the LLM make most decisions, including greeting detection
+        # Let the LLM make decisions with awareness of conversation history
         prompt = f"""
-        Analyze the user request and decide:
+        Analyze the user request in the context of the conversation history and decide:
         1. Whether this is a simple greeting (yes/no).
         2. Whether to pull external context from RAG (yes/no).
         3. Which tools to invoke (text_service/image_service/pdf_service).
         4. Any required components for final quality check.
         5. A brief reasoning for your decisions.
 
-        User request: "{user_q}"
+        {{'Previous conversation:\n' + conversation_history if conversation_history else 'No previous conversation.'}}
+        
+        Current user request: "{user_q}"
 
-        {'User has uploaded a PDF file. ' if has_uploaded_pdf else ''}
-        {'If the user is asking questions about their uploaded PDF, you should NOT generate a new PDF but answer with text_service.' if has_uploaded_pdf else ''}
+        {{'User has uploaded a PDF file. ' if has_uploaded_pdf else ''}}
+        {{'If the user is asking questions about their uploaded PDF, you should NOT generate a new PDF but answer with text_service.' if has_uploaded_pdf else ''}}
         
         **Important:** Only select pdf_service if the user explicitly requests to create/generate/export a NEW PDF.
         If the user is asking ABOUT PDF content or has questions about their uploaded PDF, use text_service instead.
@@ -198,19 +225,19 @@ class AgenticRAGWorkflow:
                 results[t] = self._generate_text(
                     state.get("rag_context", ""), 
                     state.get("file_context", ""), 
-                    state["messages"][-1].content
+                    state["messages"]  # Pass the full message history
                 )
             elif t == "image_service":
                 results[t] = self._generate_image(
                     state.get("rag_context", ""), 
                     state.get("file_context", ""), 
-                    state["messages"][-1].content
+                    state["messages"][-1].content  # Use just the current query for image generation
                 )
             elif t == "pdf_service" and not pdf_generated:
                 results[t] = self._generate_pdf(
                     state.get("rag_context", ""), 
                     state.get("file_context", ""), 
-                    state["messages"][-1].content
+                    state["messages"][-1].content  # Use just the current query for PDF generation
                 )
                 pdf_generated = True
                 
@@ -279,8 +306,11 @@ class AgenticRAGWorkflow:
             simple_prompt = f"Provide a brief, friendly response to this simple greeting: '{state['messages'][-1].content}'"
             simple_response = llm.invoke([HumanMessage(content=simple_prompt)]).content
             
+            # Create new message list with history plus new response
+            updated_messages = state["messages"] + [AIMessage(content=simple_response)]
+            
             return {
-                "messages": [AIMessage(content=simple_response)],
+                "messages": updated_messages,  # Return full message history
                 "supervisor_reasoning": "Simple greeting detected, generated direct response."
             }
         
@@ -333,8 +363,11 @@ class AgenticRAGWorkflow:
             if r["type"] == "image" and r.get("content") and "![" not in final_response and r["content"] not in final_response:
                 final_response = f"{final_response}\n\n![Generated Image]({r['content']})"
         
+        # Create new message list with history plus new response
+        updated_messages = state["messages"] + [AIMessage(content=final_response)]
+        
         return {
-            "messages": [AIMessage(content=final_response)],
+            "messages": updated_messages,  # Return full message history
             "supervisor_reasoning": state.get("reasoning")
         }
 
@@ -360,9 +393,12 @@ class AgenticRAGWorkflow:
         )
         self.workflow.add_edge("format_response", END)
 
-    def __call__(self, user_input: str, file_context: Optional[str] = None):
-        init_msgs: List[Union[SystemMessage, HumanMessage]] = []
-        init_msgs.append(HumanMessage(content=user_input))
+    def __call__(self, user_input: str, file_context: Optional[str] = None, message_history: Optional[List[Union[HumanMessage, AIMessage]]] = None):
+        # Use provided message history or create a new one with just the current query
+        if message_history:
+            init_msgs = message_history
+        else:
+            init_msgs = [HumanMessage(content=user_input)]
 
         state: AgentState = {
             "messages": init_msgs,

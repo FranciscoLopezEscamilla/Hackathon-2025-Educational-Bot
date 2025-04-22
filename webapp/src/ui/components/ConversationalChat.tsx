@@ -92,6 +92,7 @@ const ConversationalChat = ({
       (file) => formData.append("files", file) // must match FastAPI
     );
     formData.append("query", message);
+    formData.append("message_history", JSON.stringify(chatHistory));
 
     // Debug: inspect contents
     for (const [key, val] of formData.entries()) {
