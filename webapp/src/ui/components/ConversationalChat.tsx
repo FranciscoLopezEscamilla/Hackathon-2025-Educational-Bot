@@ -1,7 +1,7 @@
 import AttachmentIcon from "@/assets/AttachmentIcon";
 import ImageIcon from "@/assets/ImageIcon";
 import RemoveIcon from "@/assets/RemoveIcon";
-import { Message, FileItem } from "@/types/types";
+import { Message } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import TextareaAutosize from "react-textarea-autosize";
@@ -12,7 +12,7 @@ import { useChatStore } from "@/ui/state/chatStore";
 interface IProps {
   handleChangeMessage: (value: string) => void;
   message: string;
-  handleOnSubmitForm: (message: string) => void;
+  handleOnSubmitForm: (formData: FormData) => void;
   loadingChatResponse: boolean;
   reSendLastMessage: () => void;
   showToast: (message: string) => void;
@@ -29,7 +29,7 @@ const ConversationalChat = ({
   const [selectedAvailableTools, setSelectedAvailableTools] = useState<
     string[]
   >([]);
-  const [uploadedFiles, setUploadedFiles] = useState<FileItem[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<FileList | null>(null);
   const chatHistory = useChatStore((state) => state.messages);
   const scrollRef = useRef<HTMLInputElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
@@ -51,35 +51,55 @@ const ConversationalChat = ({
   };
 
   const getFilesList = () => {
-    const files = filesRef.current?.files;
-    if (files) {
-      const fileList = Array.from(files).map((file): FileItem => {
-        return {
-          id: file.name + crypto.randomUUID(),
-          name: file.name,
-          extension: getFileExtension(file.name),
-        };
-      });
-      console.log(Array.from(files));
-      setUploadedFiles(fileList);
-    }
+    const files = filesRef.current?.files || null;
+    console.log(files);
+    setUploadedFiles(files);
+    // if (files) {
+    //   const fileList = Array.from(files).map((file): FileItem => {
+    //     return {
+    //       id: file.name + crypto.randomUUID(),
+    //       name: file.name,
+    //       extension: getFileExtension(file.name),
+    //     };
+    //   });
+    //   console.log(Array.from(files));
+    // }
   };
 
-  const getFileExtension = (fileName: string) => {
-    const fileExtension = fileName.split(".").pop() as string;
-    return fileExtension;
-  };
+  // const getFileExtension = (fileName: string) => {
+  //   const fileExtension = fileName.split(".").pop() as string;
+  //   return fileExtension;
+  // };
 
   const removeFiles = () => {
-    setUploadedFiles([]);
+    setUploadedFiles(null);
     if (filesRef.current) {
       filesRef.current.value = "";
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleOnSubmitForm(message);
+    const fileList = filesRef.current?.files;
+    // if (!fileList || fileList.length === 0) {
+    //   showToast("Please attach at least one file.");
+    //   return;
+    // }
+
+    // Build FormData
+    const formData = new FormData();
+    Array.from(fileList).forEach(
+      (file) => formData.append("files", file) // must match FastAPI
+    );
+    formData.append("query", message);
+
+    // Debug: inspect contents
+    for (const [key, val] of formData.entries()) {
+      console.log(key, val);
+    }
+
+    // Send to backend
+    handleOnSubmitForm(formData);
   };
 
   return (
@@ -140,7 +160,11 @@ const ConversationalChat = ({
       )}
       {/* message box */}
       <div className="w-full sm:w-full lg:w-5/8 bg-zinc-700 rounded-xl p-4 flex flex-col gap-2 box-border">
-        <form id="prompt-form" onSubmit={handleSubmit}>
+        <form
+          id="prompt-form"
+          onSubmit={handleSubmit}
+          encType="multipart/form-data"
+        >
           <TextareaAutosize
             minRows={2}
             className="w-full text-gray-300 rounded-md outline-none resize-none overflow-hidden"
@@ -156,6 +180,7 @@ const ConversationalChat = ({
               <AttachmentIcon size="16" />
               <input
                 type="file"
+                name="files"
                 className="hidden"
                 id="file"
                 placeholder="w"
@@ -181,14 +206,14 @@ const ConversationalChat = ({
             Send
           </button>
         </div>
-        {uploadedFiles.length > 0 && (
+        {Array.from(uploadedFiles ?? []).length > 0 && (
           <div className="flex flex-row gap-2 w-full items-center justify-between ">
             <div className="flex gap-4 ">
-              {uploadedFiles.map(({ id, extension, name }) => {
+              {Array.from(uploadedFiles ?? []).map(({ lastModified, name }) => {
                 return (
-                  <div className="flex" key={id}>
+                  <div className="flex" key={lastModified}>
                     <p className="text-gray-400 truncate max-w-20">{name}</p>
-                    <p className="text-gray-400 truncate">.{extension}</p>
+                    {/* <p className="text-gray-400 truncate">.{extension}</p> */}
                   </div>
                 );
               })}

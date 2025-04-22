@@ -31,9 +31,10 @@ const Chatbot = () => {
     setPromptMessage(value);
   };
 
-  const handleOnSubmitForm = async (message: string) => {
+  const handleOnSubmitForm = async (formData: FormData) => {
     const randomUUID = crypto.randomUUID();
     const isFirstMessage = messages.length === 0;
+    const message = formData.get("query") as string;
 
     handleChangeMessage("");
     addMessageToChat({
@@ -45,7 +46,7 @@ const Chatbot = () => {
     setLoadingChatResponse(true);
 
     try {
-      const response = await callToAgent(message, messages);
+      const response = await callToAgent(formData);
       addMessageToChat(response.messages[response.messages.length - 1]);
       // addMessageToChat({
       //   type: "assistant",
@@ -114,7 +115,9 @@ const Chatbot = () => {
   const reSendLastMessage = () => {
     removeMessagesFromChat(2);
     const lastMessage = messages[messages.length - 2];
-    handleOnSubmitForm(lastMessage.content);
+    const formData = new FormData();
+    formData.append("query", lastMessage.content);
+    handleOnSubmitForm(formData);
   };
 
   useEffect(() => {
