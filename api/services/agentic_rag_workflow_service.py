@@ -118,6 +118,18 @@ class AgenticRAGWorkflow:
         # Check if user uploaded a PDF
         has_uploaded_pdf = bool(state.get("file_context"))
         
+        # Early exit for simple greetings/acknowledgments
+        simple_greeting_patterns = ["hello", "hi there", "hey", "thanks", "thank you", "ok", "okay", "got it", "bye"]
+        if len(user_q.split()) < 5 and any(greeting in user_q.lower() for greeting in simple_greeting_patterns) and not has_uploaded_pdf:
+            # For very simple queries, skip the complex workflow
+            logging.info("Simple greeting detected. Using direct response path.")
+            state["skip_to_response"] = True
+            state["simple_response"] = True
+            state["needed_tools"] = []  # No tools needed
+            state["has_uploaded_pdf"] = has_uploaded_pdf
+            return state
+        
+        # Regular workflow for more complex queries
         # Prompt LLM to decide which tools to run
         prompt = f"""
                 Analyze the user request and decide:
@@ -275,11 +287,23 @@ class AgenticRAGWorkflow:
 
     # ─── Format final response ───────────────────────────────────────────────
     def format_response(self, state: AgentState) -> dict:
+        # Early exit path for simple queries
+        if state.get("simple_response", False):
+            # Generate simple response with minimum LLM usage
+            user_q = state["messages"][-1].content
+            simple_prompt = f"Provide a brief, friendly response to this simple greeting: '{user_q}'"
+            simple_response = llm.invoke([HumanMessage(content=simple_prompt)]).content
+            
+            return {
+                "messages": [AIMessage(content=simple_response)],
+                "supervisor_reasoning": "Simple greeting detected, generated direct response."
+            }
+        
+        # Regular path for complex responses
         # Collect all generated content with validation
         contents = {}
         pdf_link = None
         image_link = None
-        has_text = False
         
         # Extract and validate PDF content
         for tool_name, r in state.get("tool_responses", {}).items():
@@ -296,7 +320,6 @@ class AgenticRAGWorkflow:
         for tool_name, r in state.get("tool_responses", {}).items():
             if r["type"] == "text" and r.get("content"):
                 contents["text"] = r["content"]
-                has_text = True
         
         # Collect image content
         for tool_name, r in state.get("tool_responses", {}).items():
@@ -376,10 +399,13 @@ class AgenticRAGWorkflow:
         self.workflow.add_node("format_response", self.format_response)
 
         self.workflow.set_entry_point("supervisor")
+        
+        # Modified conditional edge to handle both simple responses and no tools needed
         self.workflow.add_conditional_edges("supervisor",
-            lambda s: bool(s.get("needed_tools")),
+            lambda s: bool(s.get("needed_tools")) and not s.get("skip_to_response", False),
             {True: "execute_tools", False: "format_response"}
         )
+        
         self.workflow.add_edge("execute_tools", "quality_check")
         self.workflow.add_conditional_edges("quality_check",
             lambda s: s.get("needs_refinement", False),
