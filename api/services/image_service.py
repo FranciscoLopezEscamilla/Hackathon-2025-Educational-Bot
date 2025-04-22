@@ -55,9 +55,9 @@ class ImageGenerator:
             handler.write(image)
         
         # save thumbnail
-        outfile = f"{Path(image_local_path).stem}.thumbnail.jpg"
+        outfile = f"{Path(image_local_path).stem}_thumbnail.jpg"
         img = Image.open(image_local_path)
-        size = 250,250
+        size = 500,500
         img.thumbnail(size, Image.Resampling.LANCZOS)    
         img.save(os.path.join(images_folder,images_path,  outfile), "JPEG")    
 
