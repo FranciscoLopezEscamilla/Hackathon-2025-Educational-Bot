@@ -118,91 +118,63 @@ class AgenticRAGWorkflow:
         # Check if user uploaded a PDF
         has_uploaded_pdf = bool(state.get("file_context"))
         
-        # Early exit for simple greetings/acknowledgments
-        simple_greeting_patterns = ["hello", "hi there", "hey", "thanks", "thank you", "ok", "okay", "got it", "bye"]
-        if len(user_q.split()) < 5 and any(greeting in user_q.lower() for greeting in simple_greeting_patterns) and not has_uploaded_pdf:
-            # For very simple queries, skip the complex workflow
-            logging.info("Simple greeting detected. Using direct response path.")
-            state["skip_to_response"] = True
-            state["simple_response"] = True
-            state["needed_tools"] = []  # No tools needed
-            state["has_uploaded_pdf"] = has_uploaded_pdf
-            return state
-        
-        # Regular workflow for more complex queries
-        # Prompt LLM to decide which tools to run
+        # Let the LLM make most decisions, including greeting detection
         prompt = f"""
-                Analyze the user request and decide:
-                1. Whether to pull external context from RAG (pull_context: true/false).
-                2. Which tools to invoke: needs_text, needs_images, needs_pdf.
-                3. Any required components for final quality check.
-                4. A brief reasoning.
+        Analyze the user request and decide:
+        1. Whether this is a simple greeting (yes/no).
+        2. Whether to pull external context from RAG (yes/no).
+        3. Which tools to invoke (text_service/image_service/pdf_service).
+        4. Any required components for final quality check.
+        5. A brief reasoning for your decisions.
 
-                Available tools:
-                - text_service (for text replies)
-                - image_service (for image generation)
-                - pdf_service (for PDF export)
+        User request: "{user_q}"
 
-                {'User has uploaded a PDF file. ' if has_uploaded_pdf else ''}
-                {'If the user is asking questions about their uploaded PDF, you should NOT generate a new PDF but answer with text_service.' if has_uploaded_pdf else ''}
-                
-                **Important:** Always assume the tools exist. Only set needs_pdf to true if the user explicitly requests to create/generate/export a NEW PDF.
-                If the user is asking ABOUT PDF content or has questions about their uploaded PDF, use text_service instead.
+        {'User has uploaded a PDF file. ' if has_uploaded_pdf else ''}
+        {'If the user is asking questions about their uploaded PDF, you should NOT generate a new PDF but answer with text_service.' if has_uploaded_pdf else ''}
+        
+        **Important:** Only select pdf_service if the user explicitly requests to create/generate/export a NEW PDF.
+        If the user is asking ABOUT PDF content or has questions about their uploaded PDF, use text_service instead.
 
-                Return strictly valid JSON:
-                {{
-                "pull_context": <true|false>,
-                "needs_text": <true|false>,
-                "needs_images": <true|false>,
-                "needs_pdf": <true|false>,
-                "required_components": [ ... ],
-                "reasoning": "..."
-                }}
-
-                User Query: {user_q}
-                """
+        Return strictly valid JSON:
+        {{
+        "is_simple_greeting": <true|false>,
+        "pull_context": <true|false>,
+        "tools": ["text_service", "image_service", "pdf_service"],
+        "required_components": [ ... ],
+        "reasoning": "..."
+        }}
+        """
+        
         raw = llm.invoke([HumanMessage(content=prompt)]).content
         try:
             decision = json.loads(raw)
         except json.JSONDecodeError:
             # Fallback defaults
             decision = {
+                "is_simple_greeting": False,
                 "pull_context": False,
-                "needs_text": True,
-                "needs_images": False,
-                "needs_pdf": False,
+                "tools": ["text_service"],
                 "required_components": [],
-                "reasoning": "default to text"
+                "reasoning": "default to text response due to parsing error"
             }
         
-        # More careful checking for PDF generation intent
-        pdf_keywords = ["generate pdf", "create pdf", "make pdf", "export as pdf", "export to pdf", "produce pdf", "compile pdf"]
-        explicitly_wants_pdf = any(keyword in user_q.lower() for keyword in pdf_keywords)
-        
-        if explicitly_wants_pdf:
-            decision["needs_pdf"] = True
-            decision["reasoning"] += " User explicitly requested a PDF generation."
-        elif has_uploaded_pdf and "pdf" in user_q.lower():
-            # If user uploaded a PDF and mentions PDF but not explicitly requesting generation
-            decision["needs_pdf"] = False
-            decision["needs_text"] = True
-            decision["reasoning"] += " User is asking about their uploaded PDF, responding with text."
-            
+        # Handle simple greeting flow
+        if decision.get("is_simple_greeting", False):
+            state["skip_to_response"] = True
+            state["simple_response"] = True
+            state["needed_tools"] = []
+            state["has_uploaded_pdf"] = has_uploaded_pdf
+            return state
+                
         # Conditionally retrieve context
         if decision.get("pull_context"):
             state["rag_context"] = RAG.get_context_from_index(user_q)
         else:
             state["rag_context"] = state.get("rag_context") or ""
-            
-        # Store whether user uploaded a PDF
-        state["has_uploaded_pdf"] = has_uploaded_pdf
         
-        # Determine needed tools
-        tools = []
-        if decision.get("needs_text"): tools.append("text_service")
-        if decision.get("needs_images"): tools.append("image_service")
-        if decision.get("needs_pdf"): tools.append("pdf_service")
-        state["needed_tools"] = tools
+        # Store state information
+        state["has_uploaded_pdf"] = has_uploaded_pdf
+        state["needed_tools"] = decision.get("tools", ["text_service"])
         state["required_components"] = decision.get("required_components", [])
         state["reasoning"] = decision.get("reasoning", "")
         state["iteration_count"] = state.get("iteration_count", 0) + 1
@@ -256,42 +228,55 @@ class AgenticRAGWorkflow:
             
         logging.info(f"Quality check iteration: {state.get('iteration_count', 0)}")
         
-        # Skip quality check if PDF was generated (assume it's good enough)
-        if state.get("pdf_generated", False):
-            pdf_response = state["tool_responses"].get("pdf_service", {})
-            if not pdf_response.get("content"):
-                logging.warning("PDF generation failed. Marking as not needing refinement to avoid loops.")
-            state["needs_refinement"] = False
-            return state
-
-        # Only perform quality check on non-PDF responses
-        combined = "\n\n".join(
-            r["content"] if isinstance(r.get("content"), str) else str(r.get("content"))
-            for r in state.get("tool_responses", {}).values()
-            if r["type"] != "pdf"  # Exclude PDFs from the combined content
-        )
+        # Collect responses
+        responses = []
+        for tool_name, r in state.get("tool_responses", {}).items():
+            if r["type"] == "text":
+                responses.append(f"Text response: {r.get('content', '')}")
+            elif r["type"] == "image":
+                responses.append(f"Image generated: {r.get('content', '(image url)')}")
+            elif r["type"] == "pdf":
+                responses.append(f"PDF generated: {r.get('content', '(pdf url)')}")
         
-        if not combined.strip():
-            # If there's no content to check, don't refine
-            state["needs_refinement"] = False
-            return state
+        combined_responses = "\n\n".join(responses)
+        
+        # Let the LLM decide if refinement is needed
+        prompt = f"""
+        Evaluate if the following response sufficiently addresses the user query:
+        
+        USER QUERY: "{state['messages'][-1].content}"
+        
+        CURRENT RESPONSE:
+        {combined_responses}
+        
+        Answer with JSON:
+        {{
+            "needs_refinement": <true|false>,
+            "reason": "<brief explanation>",
+            "tools_to_refine": ["<tool_name>", ...] // Only include if needs_refinement is true
+        }}
+        """
+        
+        resp = llm.invoke([HumanMessage(content=prompt)]).content
+        
+        try:
+            evaluation = json.loads(resp)
+            state["needs_refinement"] = evaluation.get("needs_refinement", False)
             
-        prompt = (
-            f"Evaluate if the following response satisfies the user query '{state['messages'][-1].content}'.\n"
-            f"Response:\n{combined}\n"
-            "Answer with only 'yes' or 'no'."
-        )
-        resp = llm.invoke([HumanMessage(content=prompt)]).content.strip().lower()
-        state["needs_refinement"] = not resp.startswith("yes")
+            # If refinement is needed, specify which tools to rerun
+            if state["needs_refinement"] and "tools_to_refine" in evaluation:
+                state["needed_tools"] = evaluation["tools_to_refine"]
+        except json.JSONDecodeError:
+            # Default to not needing refinement if parsing fails
+            state["needs_refinement"] = False
+            
         return state
 
     # ─── Format final response ───────────────────────────────────────────────
     def format_response(self, state: AgentState) -> dict:
         # Early exit path for simple queries
         if state.get("simple_response", False):
-            # Generate simple response with minimum LLM usage
-            user_q = state["messages"][-1].content
-            simple_prompt = f"Provide a brief, friendly response to this simple greeting: '{user_q}'"
+            simple_prompt = f"Provide a brief, friendly response to this simple greeting: '{state['messages'][-1].content}'"
             simple_response = llm.invoke([HumanMessage(content=simple_prompt)]).content
             
             return {
@@ -299,93 +284,55 @@ class AgenticRAGWorkflow:
                 "supervisor_reasoning": "Simple greeting detected, generated direct response."
             }
         
-        # Regular path for complex responses
-        # Collect all generated content with validation
-        contents = {}
-        pdf_link = None
-        image_link = None
+        # Collect all available content
+        user_query = state["messages"][-1].content
+        has_uploaded_pdf = state.get("has_uploaded_pdf", False)
+        tool_responses = state.get("tool_responses", {})
         
-        # Extract and validate PDF content
-        for tool_name, r in state.get("tool_responses", {}).items():
-            if r["type"] == "pdf" and r.get("content") and isinstance(r["content"], str) and r["content"].strip():
-                pdf_link = r["content"]
-                contents["pdf"] = pdf_link
+        # Build a context prompt with all available information
+        context_sections = []
         
-        # Validate PDF generation status
-        pdf_actually_generated = pdf_link is not None
-        if state.get("pdf_generated", False) != pdf_actually_generated:
-            logging.warning(f"PDF generation status mismatch. State says: {state.get('pdf_generated')}, Actual: {pdf_actually_generated}")
+        if has_uploaded_pdf:
+            context_sections.append(f"User uploaded a PDF with content: {state.get('file_context', 'N/A')[:200]}...")
         
-        # Collect text content
-        for tool_name, r in state.get("tool_responses", {}).items():
-            if r["type"] == "text" and r.get("content"):
-                contents["text"] = r["content"]
+        if state.get("rag_context"):
+            context_sections.append(f"Retrieved context: {state.get('rag_context')[:200]}...")
         
-        # Collect image content
-        for tool_name, r in state.get("tool_responses", {}).items():
-            if r["type"] == "image" and r.get("content") and isinstance(r["content"], str) and r["content"].strip():
-                image_link = r["content"]
-                contents["image"] = image_link
+        # Add tool responses
+        for tool_name, r in tool_responses.items():
+            if r["type"] == "text":
+                context_sections.append(f"Generated text content: {r['content']}")
+            elif r["type"] == "image" and r.get("content"):
+                context_sections.append(f"Generated image URL: {r['content']}")
+            elif r["type"] == "pdf" and r.get("content"):
+                context_sections.append(f"Generated PDF URL: {r['content']}")
         
-        # Build a comprehensive prompt for the LLM
-        prompt = """
-        Generate a comprehensive and cohesive final response that incorporates all the information provided.
-        Format the response appropriately using markdown.
+        context = "\n\n".join(context_sections)
         
-        USER QUERY:
-        {user_query}
+        # Let the LLM construct the final response
+        prompt = f"""
+        Generate a comprehensive response to the user that integrates all available information.
+        Use markdown formatting appropriately.
         
-        AVAILABLE CONTENT TO INTEGRATE:
-        {content_details}
+        USER QUERY: {user_query}
         
-        IMPORTANT GUIDELINES:
-        1. If a PDF was generated, explicitly state this fact and include the download link.
-        2. If no PDF was generated, DO NOT mention creating a PDF.
-        3. If an image was generated, reference it naturally in your response.
-        4. Be conversational yet informative, providing a complete answer to the user's query.
-        5. If the user uploaded a PDF that you analyzed, acknowledge this in your response.
-        6. Ensure all links to PDFs or images are properly formatted in markdown.
+        AVAILABLE INFORMATION:
+        {context}
         
-        Your response should be a seamless integration of all available information.
+        GUIDELINES:
+        1. If a PDF was generated, explicitly mention it and include the download link.
+        2. If an image was generated, reference it naturally and include the image in markdown format.
+        3. Be conversational yet informative and complete.
+        4. If the user uploaded a PDF that you analyzed, acknowledge this fact.
         """
         
-        # Build content details section
-        content_details = ""
+        final_response = llm.invoke([SystemMessage(content=prompt)]).content
         
-        # Add details about user-uploaded content
-        if state.get("has_uploaded_pdf", False):
-            content_details += "- User uploaded a PDF file that was analyzed.\n"
-            if state.get("file_context"):
-                content_details += f"- File content summary: {state.get('file_context')[:200]}...\n\n"
+        # Ensure image is properly included if it exists but not in the response
+        for _, r in tool_responses.items():
+            if r["type"] == "image" and r.get("content") and "![" not in final_response and r["content"] not in final_response:
+                final_response = f"{final_response}\n\n![Generated Image]({r['content']})"
         
-        # Add details about generated text
-        if "text" in contents:
-            content_details += f"- Generated text content: {contents['text'][:300]}...\n\n"
-        
-        # Add details about generated PDF
-        if pdf_actually_generated:
-            content_details += f"- A PDF document has been generated and is available at: {pdf_link}\n"
-            content_details += "- You MUST mention this PDF and include the download link in your response.\n\n"
-        
-        # Add details about generated image
-        if "image" in contents:
-            content_details += f"- An image has been generated and is available at: {image_link}\n"
-            content_details += "- You should reference this image in your response.\n\n"
-        
-        # Fill in the prompt template
-        formatted_prompt = prompt.format(
-            user_query=state["messages"][-1].content,
-            content_details=content_details
-        )
-        
-        # Generate the final cohesive response using the LLM
-        final_response = llm.invoke([SystemMessage(content=formatted_prompt)]).content
-        
-        # Ensure image is properly included if it exists
-        if image_link and "![image]" not in final_response and image_link not in final_response:
-            final_response = f"{final_response}\n\n![image]({image_link})"
-        
-        # Return the LLM-generated cohesive response
         return {
             "messages": [AIMessage(content=final_response)],
             "supervisor_reasoning": state.get("reasoning")
