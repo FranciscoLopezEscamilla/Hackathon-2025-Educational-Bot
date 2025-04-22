@@ -46,6 +46,9 @@ class AgenticRAGWorkflow:
             "Answer the user using the provided contexts. "
             "If a file was uploaded by the user, prioritize that information. "
             "If contexts are empty or not needed, reply based only on general knowledge.\n\n"
+            "IMPORTANT: You ARE capable of generating PDFs for users. If they ask for a PDF, "
+            "acknowledge that you can create it and explain what you'll include in the PDF. "
+            "DO NOT say you can't create PDFs - you absolutely can.\n\n"
         )
         
         if file_context:
@@ -272,27 +275,96 @@ class AgenticRAGWorkflow:
 
     # ─── Format final response ───────────────────────────────────────────────
     def format_response(self, state: AgentState) -> dict:
-        parts = []
-        for r in state.get("tool_responses", {}).values():
-            if r["type"] == "text":
-                parts.append(r["content"])
-            elif r["type"] == "image":
-                parts.append(f"![image]({r['content']})")
-            elif r["type"] == "pdf":
-                parts.append(f"[Download PDF]({r['content']})")
-
-        # Contextually aware responses
-        if state.get("pdf_generated", False):
-            parts.append("I've generated a new PDF document based on your request. You can download it using the link above.")
-        elif state.get("has_uploaded_pdf", False) and "pdf_service" not in state.get("needed_tools", []):
-            # The user uploaded a PDF but we didn't generate a new one
-            if not any(parts):  # If no parts exist yet
-                parts.append("I've analyzed the PDF you uploaded. How else can I help with this document?")
-
-        content = "\n\n".join(parts)
-        # Return messages and keep reasoning separate
+        # Collect all generated content with validation
+        contents = {}
+        pdf_link = None
+        image_link = None
+        has_text = False
+        
+        # Extract and validate PDF content
+        for tool_name, r in state.get("tool_responses", {}).items():
+            if r["type"] == "pdf" and r.get("content") and isinstance(r["content"], str) and r["content"].strip():
+                pdf_link = r["content"]
+                contents["pdf"] = pdf_link
+        
+        # Validate PDF generation status
+        pdf_actually_generated = pdf_link is not None
+        if state.get("pdf_generated", False) != pdf_actually_generated:
+            logging.warning(f"PDF generation status mismatch. State says: {state.get('pdf_generated')}, Actual: {pdf_actually_generated}")
+        
+        # Collect text content
+        for tool_name, r in state.get("tool_responses", {}).items():
+            if r["type"] == "text" and r.get("content"):
+                contents["text"] = r["content"]
+                has_text = True
+        
+        # Collect image content
+        for tool_name, r in state.get("tool_responses", {}).items():
+            if r["type"] == "image" and r.get("content") and isinstance(r["content"], str) and r["content"].strip():
+                image_link = r["content"]
+                contents["image"] = image_link
+        
+        # Build a comprehensive prompt for the LLM
+        prompt = """
+        Generate a comprehensive and cohesive final response that incorporates all the information provided.
+        Format the response appropriately using markdown.
+        
+        USER QUERY:
+        {user_query}
+        
+        AVAILABLE CONTENT TO INTEGRATE:
+        {content_details}
+        
+        IMPORTANT GUIDELINES:
+        1. If a PDF was generated, explicitly state this fact and include the download link.
+        2. If no PDF was generated, DO NOT mention creating a PDF.
+        3. If an image was generated, reference it naturally in your response.
+        4. Be conversational yet informative, providing a complete answer to the user's query.
+        5. If the user uploaded a PDF that you analyzed, acknowledge this in your response.
+        6. Ensure all links to PDFs or images are properly formatted in markdown.
+        
+        Your response should be a seamless integration of all available information.
+        """
+        
+        # Build content details section
+        content_details = ""
+        
+        # Add details about user-uploaded content
+        if state.get("has_uploaded_pdf", False):
+            content_details += "- User uploaded a PDF file that was analyzed.\n"
+            if state.get("file_context"):
+                content_details += f"- File content summary: {state.get('file_context')[:200]}...\n\n"
+        
+        # Add details about generated text
+        if "text" in contents:
+            content_details += f"- Generated text content: {contents['text'][:300]}...\n\n"
+        
+        # Add details about generated PDF
+        if pdf_actually_generated:
+            content_details += f"- A PDF document has been generated and is available at: {pdf_link}\n"
+            content_details += "- You MUST mention this PDF and include the download link in your response.\n\n"
+        
+        # Add details about generated image
+        if "image" in contents:
+            content_details += f"- An image has been generated and is available at: {image_link}\n"
+            content_details += "- You should reference this image in your response.\n\n"
+        
+        # Fill in the prompt template
+        formatted_prompt = prompt.format(
+            user_query=state["messages"][-1].content,
+            content_details=content_details
+        )
+        
+        # Generate the final cohesive response using the LLM
+        final_response = llm.invoke([SystemMessage(content=formatted_prompt)]).content
+        
+        # Ensure image is properly included if it exists
+        if image_link and "![image]" not in final_response and image_link not in final_response:
+            final_response = f"{final_response}\n\n![image]({image_link})"
+        
+        # Return the LLM-generated cohesive response
         return {
-            "messages": [AIMessage(content=content)],
+            "messages": [AIMessage(content=final_response)],
             "supervisor_reasoning": state.get("reasoning")
         }
 
