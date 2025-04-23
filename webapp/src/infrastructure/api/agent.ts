@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const AGENT_API_BASE_URL = "http://127.0.0.1:8000";
+const AGENT_API_BASE_URL = import.meta.env.API_BASE_URL;
 
 export const callToAgent = async (formData: FormData) => {
   console.log(formData);
