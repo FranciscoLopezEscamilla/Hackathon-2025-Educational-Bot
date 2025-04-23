@@ -11,7 +11,7 @@ from IPython.display import Image, display
 from services.rag_service import RAG
 from services.image_service import ImageGenerator
 from services.document_generator_service import DocumentGenerator
-
+from services.blob_service import BlobService
 
 index_path = os.path.normpath(os.getcwd()) + "/index/faiss_index"
 print(index_path)
@@ -100,10 +100,12 @@ class AgenticRAGWorkflow:
         prompt_ = f"Generate a short title for this content: {content}"
         title = llm.invoke(prompt_).content
 
-        pdf_file = DocumentGenerator.create(title = title, content = content)        
+        pdf_file = DocumentGenerator.create(title = title, content = content)
+        blob_url = BlobService.upload_file(pdf_file, title)        
+        
         return {
             "type": "pdf",
-            "content": pdf_file,
+            "content": blob_url,
             "format": "markdown",
             "description": "Generated PDF document"
         }
