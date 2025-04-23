@@ -10,3 +10,5 @@ deploy:
     API_TOKEN: $DEPLOYMENT_TOKEN
   script:
     - echo "Building and deploying React app to Azure Static Web Apps"
+  only:
+    - feature/frontend-wireframes

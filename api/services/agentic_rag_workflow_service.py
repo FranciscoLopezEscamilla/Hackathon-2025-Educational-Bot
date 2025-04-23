@@ -11,7 +11,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-# Add this constant at the top of your file, after imports
 MAX_ITERATIONS = 3  # Maximum number of refinement iterations allowed
 
 # ─── Initialize LLM ────────────────────────────────────────────────────────
