@@ -1,0 +1,12 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  image: registry.gitlab.com/static-web-apps/azure-static-web-apps-deploy:latest
+  variables:
+    APP_LOCATION: "/webapp" # adjust if your React source is in a subfolder
+    OUTPUT_LOCATION: "dist" # the output dir after `npm run build`
+    API_TOKEN: $DEPLOYMENT_TOKEN
+  script:
+    - echo "Building and deploying React app to Azure Static Web Apps"
