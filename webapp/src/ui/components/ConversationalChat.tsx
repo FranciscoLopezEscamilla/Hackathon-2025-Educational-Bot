@@ -81,14 +81,9 @@ const ConversationalChat = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const fileList = filesRef.current?.files;
-    // if (!fileList || fileList.length === 0) {
-    //   showToast("Please attach at least one file.");
-    //   return;
-    // }
-
     // Build FormData
     const formData = new FormData();
-    Array.from(fileList).forEach(
+    Array.from(fileList || []).forEach(
       (file) => formData.append("files", file) // must match FastAPI
     );
     formData.append("query", message);
@@ -111,10 +106,10 @@ const ConversationalChat = ({
           ref={scrollRef}
         >
           <div className="flex flex-col gap-4 w-full sm:w-full lg:w-5/8 mx-auto my-16">
-            {chatHistory.map(({ id, content, type }: Message) => {
+            {chatHistory.map(({ content, type }: Message) => {
               return (
                 <div
-                  key={id}
+                  key={crypto.randomUUID()}
                   className={`transition-all w-fit max-w-7/10 rounded-t-xl  py-2 text-gray-100  ${
                     type === "user"
                       ? "self-end rounded-bl-xl bg-cyan-900 border-gray-600 border-1 px-3"

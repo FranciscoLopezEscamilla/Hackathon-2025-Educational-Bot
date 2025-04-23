@@ -47,12 +47,11 @@ const Chatbot = () => {
 
     try {
       const response = await callToAgent(formData);
-      addMessageToChat(response.messages[response.messages.length - 1]);
-      // addMessageToChat({
-      //   type: "assistant",
-      //   id: crypto.randomUUID(),
-      //   content: "This is a test response",
-      // });
+      addMessageToChat({
+        id: crypto.randomUUID(),
+        content: response.messages[response.messages.length - 1].content,
+        type: "assistant",
+      });
     } catch (error) {
       console.log(error);
       addMessageToChat({
