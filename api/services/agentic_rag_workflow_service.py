@@ -12,6 +12,7 @@ from services.rag_service import RAG
 from services.image_service import ImageGenerator
 from services.document_generator_service import DocumentGenerator
 from services.blob_service import BlobService
+from services.diagram_service import DiagramGenerator
 
 index_path = os.path.normpath(os.getcwd()) + "/index/faiss_index"
 print(index_path)
@@ -33,6 +34,7 @@ class AgentState(TypedDict):
     needs_text: bool
     needs_images: bool
     needs_pdf: bool
+    needs_diagram: bool
     iteration_count: int
 
 class AgenticRAGWorkflow:
@@ -55,6 +57,7 @@ class AgenticRAGWorkflow:
             "image_service": self.image_service,
             "pdf_service": self.pdf_service,
             "text_service": self.text_service,
+            "diagram_service": self.diagram_service,
             "quality_service": self.quality_check
         }
         
@@ -123,6 +126,20 @@ class AgenticRAGWorkflow:
         }
 
 
+    @tool
+    def diagram_service(context: str):
+        "Generate a smart diagrams based on text"
+
+        diagram_code = DiagramGenerator.generate_diagram(context)
+        diagram = DiagramGenerator.execute_mermaid(diagram_code)
+
+        return{
+            "type": "image",
+            "content": diagram,
+            "format": "markdown",
+        }
+
+
     def check_quality_and_complexity(self, state: AgentState) -> str:
         state["iteration_count"] = state.get("iteration_count", 0) + 1
         max_iterations = 2 
@@ -181,6 +198,7 @@ class AgenticRAGWorkflow:
             "needs_text": <true or false>,
             "needs_images": <true or false>,
             "needs_pdf": <true or false>,
+            "needs_diagram": <true or false>,
             "required_components": [list of required component names],
             "reasoning": "<brief explanation>"
         }}
@@ -213,6 +231,12 @@ class AgenticRAGWorkflow:
             results["pdf"] = self.pdf_service.invoke({
                 "context": state["context"],
                 "query": state["messages"][-1].content
+            })
+        if state.get("needs_diagram"):
+            print("Invoking diagram_service")
+            results["pdf"] = self.diagram_service.invoke({
+                "context": state["context"],
+                #"query": state["messages"][-1].content
             })
         
         state["tool_responses"] = results
@@ -271,11 +295,12 @@ class AgenticRAGWorkflow:
                 "needs_text": bool(decision.get("needs_text", False)),
                 "needs_images": bool(decision.get("needs_images", False)),
                 "needs_pdf": bool(decision.get("needs_pdf", False)),
+                "needs_diagram": bool(decision.get("needs_diagram", False)),
                 "required_components": decision.get("required_components", []),
             }
         except json.JSONDecodeError:
             print("JSON decoding error for supervisor response:", response)
-            return {"needs_text": True, "needs_images": False, "needs_pdf": False, "required_components": []}
+            return {"needs_text": True, "needs_images": False, "needs_pdf": False,  "needs_diagram": False, "required_components": []}
 
     def _parse_quality_response(self, response: str) -> dict:
         try:
@@ -288,7 +313,7 @@ class AgenticRAGWorkflow:
             return {"needs_refinement": True, "required_components": []}
 
     def route_tools(self, state: AgentState):
-        if any([state.get("needs_text"), state.get("needs_images"), state.get("needs_pdf")]):
+        if any([state.get("needs_text"), state.get("needs_images"), state.get("needs_pdf"), state.get("needs_diagram")]):
             return "continue"
         return "respond"
 
@@ -307,6 +332,7 @@ class AgenticRAGWorkflow:
             "needs_text": False,
             "needs_images": False,
             "needs_pdf": False,
+            "needs_diagram": False,
             "iteration_count": 0
         }
         return self.chain.invoke(initial_state)
