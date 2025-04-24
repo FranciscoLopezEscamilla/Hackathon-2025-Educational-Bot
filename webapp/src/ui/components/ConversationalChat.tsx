@@ -54,22 +54,7 @@ const ConversationalChat = ({
     const files = filesRef.current?.files || null;
     console.log(files);
     setUploadedFiles(files);
-    // if (files) {
-    //   const fileList = Array.from(files).map((file): FileItem => {
-    //     return {
-    //       id: file.name + crypto.randomUUID(),
-    //       name: file.name,
-    //       extension: getFileExtension(file.name),
-    //     };
-    //   });
-    //   console.log(Array.from(files));
-    // }
   };
-
-  // const getFileExtension = (fileName: string) => {
-  //   const fileExtension = fileName.split(".").pop() as string;
-  //   return fileExtension;
-  // };
 
   const removeFiles = () => {
     setUploadedFiles(null);
@@ -188,10 +173,10 @@ const ConversationalChat = ({
                 Attach files
               </label>
             </span>
-            <button className=" text-white rounded-md transition-all select-none flex justify-between items-center gap-1 cursor-pointer hover:text-zinc-400">
+            {/* <button className=" text-white rounded-md transition-all select-none flex justify-between items-center gap-1 cursor-pointer hover:text-zinc-400">
               <ImageIcon size="16" />
               Use Image
-            </button>
+            </button> */}
           </span>
           <button
             type="submit"
