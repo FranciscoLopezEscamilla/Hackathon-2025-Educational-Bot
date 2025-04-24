@@ -133,9 +133,11 @@ class AgenticRAGWorkflow:
         diagram_code = DiagramGenerator.generate_diagram(context)
         diagram = DiagramGenerator.execute_mermaid(diagram_code)
 
+        diagram
+
         return{
-            "type": "image",
-            "content": diagram,
+            "type": "diagram",
+            #"content": diagram,
             "format": "markdown",
         }
 

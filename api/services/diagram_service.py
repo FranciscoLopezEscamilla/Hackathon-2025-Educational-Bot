@@ -9,12 +9,12 @@ class DiagramGenerator:
     def generate_diagram(text):
         "you are a diagram creator expert that generates diagrams with mermaid package"
 
-        prompt = """Your job is to write the code to generate a colorful mermaid diagram describing the text below:
+        prompt  = """Your job is to write the code to generate a colorful mermaid diagram describing the text below:
 
         {text} 
-
+    
         Please understand the text before generating the code. use the text information only , don't use any other information.
-        only generate the code as output nothing extra.
+        only generate the code as output nothing extra. Do not add code that is not part of mermaid.
         each line in the code must be terminated by ; 
         Code:"""
 
