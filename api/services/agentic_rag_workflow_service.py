@@ -168,7 +168,7 @@ class AgenticRAGWorkflow:
         prompt = f"""
         Analyze the user request in the context of the conversation history and decide:
         1. Whether this is a simple greeting (yes/no).
-        2. Whether to pull external context from RAG (yes/no). contents within RAG are related to Gen AI in art or music using Python.
+        2. Whether to pull external context from RAG (yes/no). contents within RAG are related to Gen AI in art using Python.
         3. Which tools to invoke (text_service/image_service/pdf_service/diagram_service).
         4. Any required components for final quality check.
         5. A brief reasoning for your decisions.
