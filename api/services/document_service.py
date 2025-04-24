@@ -12,7 +12,7 @@ TEXT_BLOCK_HEIGHT = Inches(0.8)
 IMAGE_HEIGHT = Inches(2)
 IMAGE_SPACING = Inches(0.2)
 MAX_CONTENT_HEIGHT = Inches(7.0)
-LOCAL_IMG_DIR = "static\sample_images"
+LOCAL_IMG_DIR = "assets\sample_images"
 
 class DocumentGenerator():
     #@staticmethod
