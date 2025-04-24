@@ -9,6 +9,7 @@ import os
 import json
 import logging
 from services.blob_service import BlobService
+from services.diagram_service import DiagramGenerator
 
 logging.basicConfig(level=logging.INFO)
 
@@ -127,6 +128,23 @@ class AgenticRAGWorkflow:
 
         return {"type": "pdf", "content": blob_url}
 
+    def _generate_diagram(self, rag_context: str, file_context: str, query: str) -> dict:
+        print(query)
+        combined_context = f"{rag_context}\n{file_context}"
+        print("combined_context ===>", combined_context)
+        print("ENTERED DIAGRAM GENERATION")
+        
+
+        diagram_code = DiagramGenerator.generate_diagram(combined_context)
+        diagram_URL, file_Id = DiagramGenerator.execute_mermaid(diagram_code)
+        blob_url = BlobService.upload_file(diagram_URL, file_Id)
+
+        return{
+            "type": "diagram",
+            "content": blob_url,
+        }
+
+
     # ─── Supervisor: LLM-driven tool decision + conditional RAG retrieval ────
     def supervisor(self, state: AgentState) -> AgentState:
         print("Supervisor invoked")
@@ -150,8 +168,8 @@ class AgenticRAGWorkflow:
         prompt = f"""
         Analyze the user request in the context of the conversation history and decide:
         1. Whether this is a simple greeting (yes/no).
-        2. Whether to pull external context from RAG (yes/no).
-        3. Which tools to invoke (text_service/image_service/pdf_service).
+        2. Whether to pull external context from RAG (yes/no). contents within RAG are related to Gen AI in art or music using Python.
+        3. Which tools to invoke (text_service/image_service/pdf_service/diagram_service).
         4. Any required components for final quality check.
         5. A brief reasoning for your decisions.
 
@@ -165,11 +183,15 @@ class AgenticRAGWorkflow:
         **Important:** Only select pdf_service if the user explicitly requests to create/generate/export a NEW PDF.
         If the user is asking ABOUT PDF content or has questions about their uploaded PDF, use text_service instead.
 
+        **Important:** You can create diagrams using the diagram_service.
+        If the user is asking for a diagram, use diagram_service instead of image_service.
+
+
         Return strictly valid JSON:
         {{
         "is_simple_greeting": <true|false>,
         "pull_context": <true|false>,
-        "tools": ["text_service", "image_service", "pdf_service"],
+        "tools": ["text_service", "image_service", "pdf_service", "diagram_service"],
         "required_components": [ ... ],
         "reasoning": "..."
         }}
@@ -197,10 +219,11 @@ class AgenticRAGWorkflow:
             return state
                 
         # Conditionally retrieve context
-        if decision.get("pull_context"):
-            state["rag_context"] = RAG.get_context_from_index(user_q)
-        else:
-            state["rag_context"] = state.get("rag_context") or ""
+        state["rag_context"] = RAG.get_context_from_index(user_q)
+        # if decision.get("pull_context"):
+        #     print("Retrieving context from RAG")
+        # else:
+        #     state["rag_context"] = state.get("rag_context") or ""
         
         # Store state information
         state["has_uploaded_pdf"] = has_uploaded_pdf
@@ -226,23 +249,29 @@ class AgenticRAGWorkflow:
         for t in state.get("needed_tools", []):
             if t == "text_service":
                 results[t] = self._generate_text(
-                    state.get("rag_context", ""), 
-                    state.get("file_context", ""), 
+                    state.get("rag_context"), 
+                    state.get("file_context"), 
                     state["messages"]  # Pass the full message history
                 )
             elif t == "image_service":
                 results[t] = self._generate_image(
-                    state.get("rag_context", ""), 
-                    state.get("file_context", ""), 
+                    state.get("rag_context"), 
+                    state.get("file_context"), 
                     state["messages"][-1].content  # Use just the current query for image generation
                 )
             elif t == "pdf_service" and not pdf_generated:
                 results[t] = self._generate_pdf(
-                    state.get("rag_context", ""), 
-                    state.get("file_context", ""), 
+                    state.get("rag_context"), 
+                    state.get("file_context"), 
                     state["messages"][-1].content  # Use just the current query for PDF generation
                 )
                 pdf_generated = True
+            elif t == "diagram_service":
+                results[t] = self._generate_diagram(
+                    state.get("rag_context"), 
+                    state.get("file_context"), 
+                    state["messages"][-1].content  # Use just the current query for diagram generation
+                )
                 
         state["tool_responses"] = results
         state["pdf_generated"] = pdf_generated
@@ -267,6 +296,8 @@ class AgenticRAGWorkflow:
                 responses.append(f"Image generated: {r.get('content', '(image url)')}")
             elif r["type"] == "pdf":
                 responses.append(f"PDF generated: {r.get('content', '(pdf url)')}")
+            elif r["type"] == "diagram":
+                responses.append(f"Diagram generated: {r.get('content', '(diagram url)')}")
         
         combined_responses = "\n\n".join(responses)
         
@@ -339,6 +370,8 @@ class AgenticRAGWorkflow:
                 context_sections.append(f"Generated image URL: {r['content']}")
             elif r["type"] == "pdf" and r.get("content"):
                 context_sections.append(f"Generated PDF URL: {r['content']}")
+            elif r["type"] == "diagram" and r.get("content"):
+                context_sections.append(f"Generated diagram URL: {r['content']}")
         
         context = "\n\n".join(context_sections)
         
