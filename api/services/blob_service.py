@@ -1,4 +1,4 @@
-from azure.storage.blob import BlobServiceClient, ContainerClient, BlobClient
+from azure.storage.blob import BlobServiceClient
 import os
 
 conn_str = os.getenv('CONN_STR')
