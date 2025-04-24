@@ -7,7 +7,7 @@ import os
 router = APIRouter(prefix="/document", tags=["Document"])
 
 @router.post("/generate-pdf", response_class=FileResponse)
-def create_document(request: Document):
+def generate_pdf(request: Document):
     file_path: str = DocumentGenerator.generate_pdf(request.title, request.content)
     
     if not os.path.exists(file_path):
@@ -23,7 +23,7 @@ def create_document(request: Document):
     )
 
 @router.post("/generate-ppt", response_class=FileResponse)
-def create_document(request: Document):
+def generate_ppt(request: Document):
     file_path: str = DocumentGenerator.generate_ppt(request.title, request.content)
     
     if not os.path.exists(file_path):
@@ -31,7 +31,7 @@ def create_document(request: Document):
     
     return FileResponse(
         file_path,
-        media_type="application/pdf",
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         filename=os.path.basename(file_path),
         headers={
             "Content-Disposition": f"attachment; filename={os.path.basename(file_path)}"
