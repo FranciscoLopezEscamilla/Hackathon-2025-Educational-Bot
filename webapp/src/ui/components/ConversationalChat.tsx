@@ -1,5 +1,4 @@
 import AttachmentIcon from "@/assets/AttachmentIcon";
-import ImageIcon from "@/assets/ImageIcon";
 import RemoveIcon from "@/assets/RemoveIcon";
 import { Message } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
@@ -101,7 +100,7 @@ const ConversationalChat = ({
                       : "self-start rounded-br-xl"
                   }`}
                 >
-                  <div className="wrapped-text-markdown">
+                  <div className="wrapped-text-markdown formatted-anchor">
                     <Markdown>{content}</Markdown>
                   </div>
                 </div>

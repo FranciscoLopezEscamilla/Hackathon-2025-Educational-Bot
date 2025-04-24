@@ -8,6 +8,7 @@ from typing import TypedDict, List, Optional, Union
 import os
 import json
 import logging
+from services.blob_service import BlobService
 
 logging.basicConfig(level=logging.INFO)
 
@@ -119,9 +120,12 @@ class AgenticRAGWorkflow:
             title = "Generated PDF"
             content = response
             
+        print("ENTERED PDF GENERATION")
         logging.info(f"Generated PDF Title: {title}")
         pdf_file = DocumentGenerator.create(title=title, content=content)
-        return {"type": "pdf", "content": pdf_file}
+        blob_url = BlobService.upload_file(pdf_file, title)    
+
+        return {"type": "pdf", "content": blob_url}
 
     # ─── Supervisor: LLM-driven tool decision + conditional RAG retrieval ────
     def supervisor(self, state: AgentState) -> AgentState:
