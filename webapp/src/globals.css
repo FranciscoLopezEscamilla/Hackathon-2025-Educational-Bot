@@ -40,3 +40,10 @@
     overflow-wrap: break-word;
   }
 }
+
+.formatted-anchor {
+  a {
+    color: yellow;
+    font-weight: 700;
+  }
+}
