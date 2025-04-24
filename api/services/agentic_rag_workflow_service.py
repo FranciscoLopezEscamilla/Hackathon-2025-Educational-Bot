@@ -10,7 +10,7 @@ import json
 from IPython.display import Image, display
 from services.rag_service import RAG
 from services.image_service import ImageGenerator
-from services.document_generator_service import DocumentGenerator
+from api.services.document_service import DocumentGenerator
 from services.blob_service import BlobService
 
 index_path = os.path.normpath(os.getcwd()) + "/index/faiss_index"
@@ -100,7 +100,7 @@ class AgenticRAGWorkflow:
         prompt_ = f"Generate a short title for this content: {content}"
         title = llm.invoke(prompt_).content
 
-        pdf_file = DocumentGenerator.create(title = title, content = content)
+        pdf_file = DocumentGenerator.generate_pdf(title = title, content = content)
         blob_url = BlobService.upload_file(pdf_file, title)        
         
         return {
