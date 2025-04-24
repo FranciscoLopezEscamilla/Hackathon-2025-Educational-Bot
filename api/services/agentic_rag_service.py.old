@@ -1,0 +1,131 @@
+from langchain_openai import AzureChatOpenAI
+from langgraph_supervisor import create_supervisor
+from langgraph.prebuilt import create_react_agent
+from services.text_service import TextService
+from services.rag_service import RAG
+from langchain_core.tools import tool
+from langchain_core.prompts import ChatPromptTemplate
+import os
+
+# Initialize LLM
+llm = AzureChatOpenAI(
+    openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    azure_deployment=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"),
+)
+
+class AgenticRagV2:
+    # Define tools with quality check integration
+    @tool
+    def rag_tool(query: str) -> list:
+        """Retrieve relevant context from knowledge base."""
+        print("rag_tool")
+        return RAG.get_context_from_index(query)
+
+    @tool
+    def text_generator(query: str) -> str:
+        """Generate high-quality textual content."""
+        print("text_generator")
+        return TextService.generate_text(query)
+
+    @tool
+    def image_generator(query: str) -> str:
+        """Create visual assets."""
+        print("image_generator")
+        return "https://example.com/image.jpg"
+
+    @tool
+    def pdf_assembler(content: str) -> str:
+        """Compile content into PDF documents."""
+        print("pdf_assembler")
+        return "https://example.com/document.pdf"
+
+    @tool
+    def quality_check(response: str) -> str:
+        """Evaluate response quality with detailed feedback. 
+        Returns 'APPROVED: <reason>' or 'REVISION_NEEDED: <feedback>'."""
+        print("quality_check")
+        if len(response) > 50:
+            return "APPROVED: Response meets length and quality requirements"
+        return "REVISION_NEEDED: Response too short, add more details"
+
+    @tool
+    def final_assembler(context: list) -> str:
+        """Compile all approved components into final response. 
+        Include executive summary and maintain logical flow."""
+        sections = "\n\n".join([f"## {item['agent']}\n{item['response']}" 
+                              for item in context])
+        return f"# Final Answer\n{sections}\n\n# Conclusion\nIntegrated solution ready for use"
+
+    # Create agents with self-reflection
+    def _create_agent(self, name, system_prompt, tools):
+        return create_react_agent(
+            model=llm.bind_tools(tools + [self.quality_check]),
+            tools=tools + [self.quality_check],
+            prompt=ChatPromptTemplate.from_messages([
+                ("system", f"{system_prompt}\nProcess:\n1. Perform main task\n2. Self-check with quality_check\n3. Revise if needed"),
+                ("user", "{messages}")
+            ]),
+            name=name
+        )
+
+    @property
+    def agents(self):
+        return [
+            self._create_agent(
+                name="rag_agent",
+                system_prompt="You're a research assistant. Use rag_tool to find facts.",
+                tools=[self.rag_tool]
+            ),
+            self._create_agent(
+                name="text_agent",
+                system_prompt="You're a writer. Use text_generator to create content.",
+                tools=[self.text_generator]
+            ),
+            self._create_agent(
+                name="image_agent",
+                system_prompt="You're a designer. Use image_generator to create visuals.",
+                tools=[self.image_generator]
+            ),
+            self._create_agent(
+                name="pdf_agent",
+                system_prompt="You're a formatter. Use pdf_assembler to create documents.",
+                tools=[self.pdf_assembler]
+            )
+        ]
+
+    # Enhanced supervisor with synthesis capability
+    @property
+    def supervisor(self):
+        print("supervisor")
+        print(self.agents)
+        return create_supervisor(
+            agents=self.agents,
+            model=llm.bind_tools([self.final_assembler]),
+            prompt=ChatPromptTemplate.from_template("""you are a chatbot agent that helps people to train themselves by generating content for them.
+
+            read and understand the user query and then use the necessary agents provided to generate the content.
+            Orchestrate knowledge workers:
+            Workflow:
+            1. Route input to appropriate specialist
+            2. Verify quality after each step
+            3. Collect approved outputs
+            4. Repeat until all components are ready
+            5. Use final_assembler to compile final answer
+            
+            Final Answer Requirements:
+            - Combine all approved components
+            - Maintain original query context
+            - Add executive summary
+            - Ensure professional tone
+            - Include section headers
+            
+            Current task: {messages}""")
+        )
+
+    @property
+    def app(self):
+        return self.supervisor.compile()
+
+# # Usage remains the same
+# agent_system = AgenticRagV2()
+# response = agent_system.app.invoke({"input": "Your query here"})
