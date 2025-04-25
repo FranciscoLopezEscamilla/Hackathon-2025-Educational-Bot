@@ -2,6 +2,10 @@
 from langchain_ollama.chat_models import ChatOllama
 from langgraph_supervisor import create_supervisor
 from langgraph.prebuilt import create_react_agent
+from services.text_service import TextService
+from services.rag_service import RAG
+from services.image_service import ImageGenerator
+from langchain_core.tools import tool
 import os
 
 # llm = AzureChatOpenAI(
@@ -14,43 +18,29 @@ llm = ChatOllama(
 
 class MultiAgent:
 
-    def generate_text(query: str) -> str:
-        """Generate text based on user query"""
-        return f"This is the text agent, input text: {query}"
+    rag_tool = RAG.get_context_from_index
+    description_tool = TextService.generate_descriptive_text
+    image_tool = ImageGenerator.generate_images
 
-
-    def generate_images(query: str) -> str:
-        """Generate images based on user query"""
-        return f"This is the image agent, input text: {query}"
-
-    def generate_flow_charts(query: str) -> str:
-        """Generate flow charts based on user query"""
-        return f"This is the diagrams agent, input text: {query}"
-    
-    def generate_code(query: str) -> str:
-        """Generate code based on user query"""
-        return f"This is the code agent, input text: {query}"
-    
-    text_agent = create_react_agent(
+    descriptive_agent = create_react_agent(
         model=llm, 
-        tools=[generate_text],
-        name="text_creator",
-        prompt="You're a smart assistant that generate funny text"
+        tools=[description_tool],
+        name="descriptive_agent",
+        #prompt="You are a smart assistant that helps people to train themselfs by generating content for them."
     )
 
-    images_agent = create_react_agent(
-        model=llm,
-        tools=[generate_images],
-        name="image_creator",
-        prompt="You are a world class drawer that generates images and sketches like a pro"
+    rag_agent = create_react_agent(
+        model = llm,
+        tools = [rag_tool],
+        name = "rag_agent"
     )
 
-    diagrams_agent = create_react_agent(
-        model=llm,
-        tools=[generate_flow_charts],
-        name="diagram_creator",
-        prompt="You are a very smart assistant that can generate flow charts based on provided context."
-    )
+    image_agent = create_react_agent(
+         model = llm,
+         tools = [image_tool],
+         name = "image_agent",
+        # prompt = "You are a smart agent that can generate helpful images for training documents."
+     )
 
     assistant_agent = create_react_agent(
         model=llm, 
@@ -60,14 +50,18 @@ class MultiAgent:
     )
 
     workflow = create_supervisor(
-        [text_agent, images_agent,assistant_agent],
+        agents = [rag_agent, descriptive_agent, image_agent],
         model = llm,
-        prompt= (
-            "You are a team supervisor managing a images generator and a text expert generator. "
-            "For text and documents queryes, use text_agent. "
-            "For images related queries, use images_agent."
-            "For diagram requests, use diagram_creator agent."
-            "For  java python and code related queries, use assistant_agent agent."
+        prompt= ("You are a smart assistant. Your have access to multiple agents," 
+                 "your job is to act like a router and decide which agent comes to play."
+                 "If user query is simple greeting, continue with conversation without calling agents."
+                 "Here is the list of agents: rag_agent, descriptive_agent, images_agent"
+                 "For queries related to gen ai in art, gen ai in music, call the rag_agent"
+                 "If queries are unrelated to the previous topics, say that you don't know."
+                 "Always handsoff to the descriptive_agent to generate a description for an image based on rag_agent output"
+                 "For image, diagrams, charts, first use rag_agent, then descriptive_agent and finally images_agent"
+                 "Call the rag_agent just one time per user query"
+                 "Include the last agent response in yours."  
      )
     )
 
