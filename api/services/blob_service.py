@@ -5,8 +5,6 @@ conn_str = os.getenv('CONN_STR')
 container_name = os.getenv('CONTAINER')
 blob_service_client = BlobServiceClient.from_connection_string(conn_str)
 
-print(conn_str)
-print(container_name)
 
 class BlobService:
 
@@ -17,6 +15,8 @@ class BlobService:
         
         if file_extension == "png":
             file_name = f"{file_name}.png"
+        elif file_extension == "pptx":
+            file_name = f"{file_name}.pptx"
         else:
             file_name = f"{file_name}.pdf"            
 

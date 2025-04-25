@@ -9,7 +9,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from typing import List, Optional, Dict, Any, Literal
-from pdfminer.high_level import extract_text as pdfminer_extract_text
+#from pdfminer.high_level import extract_text as pdfminer_extract_text
 
 router = APIRouter(prefix="/agents", tags=["Agents"])
 
@@ -17,13 +17,13 @@ class MessageContent(BaseModel):
     type: Literal["user", "ai"]
     content: str
 
-@router.post("/multiagent")
-def call_multiagent(request: Query):
-    app = MultiAgent.app
-    response = app.invoke({"messages": [
-        request.query
-        ]})
-    return response['messages'][-1].content
+#@router.post("/multiagent")
+#def call_multiagent(request: Query):
+#    app = MultiAgent.app
+#    response = app.invoke({"messages": [
+#        request.query
+#        ]})
+#    return response['messages'][-1].content
 
 @router.post("/agentic_rag_v3")
 async def call_agentic_rag(
@@ -36,11 +36,8 @@ async def call_agentic_rag(
         parts = []
         for up in files:
             data = await up.read()
-            try:
-                reader = PdfReader(io.BytesIO(data))
-                txt = "\n".join(p.extract_text() or "" for p in reader.pages)
-            except:
-                txt = pdfminer_extract_text(io.BytesIO(data))
+            reader = PdfReader(io.BytesIO(data))
+            txt = "\n".join(p.extract_text() or "" for p in reader.pages)
             parts.append(txt)
         file_ctx = "\n\n".join(parts)
 

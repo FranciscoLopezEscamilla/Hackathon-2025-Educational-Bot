@@ -10,6 +10,8 @@ import json
 import logging
 from services.blob_service import BlobService
 from services.diagram_service import DiagramGenerator
+from services.document_service import PptGenerator
+from models.document import DocumentRequest, DocumentContent, TextItem, ImageItem
 
 logging.basicConfig(level=logging.INFO)
 
@@ -144,6 +146,38 @@ class AgenticRAGWorkflow:
             "content": blob_url,
         }
 
+    def _generate_powerpoint(self, rag_context: str, file_context: str, query: str) -> dict:
+        print("ENTERED PPT GENERATION")
+
+        
+        sample_request = DocumentRequest(
+            title="Demo Document",
+            pages=[
+                DocumentContent(
+                    text_items=[
+                        TextItem(type="header", content="Welcome"),
+                        TextItem(type="paragraph", content="This is a sample slide."),
+                    ],
+                    images=[
+                        #ImageItem(path="sample_image.png")
+                    ]
+                ),
+
+                DocumentContent(
+                    text_items=[
+                        TextItem(type="subheader", content="Second Slide"),
+                        TextItem(type="paragraph", content="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus luctus urna sed urna ultricies ac tempor dui sagittis. In condimentum facilisis porta.\nFusce sed felis eget velit aliquet faucibus. Praesent ac massa at ligula laoreet iaculis."),
+                    ],
+                    images=[]
+                )
+            ]
+        )
+
+        output_path = "../output"
+
+        ppt_file = PptGenerator.generate_ppt(sample_request, output_path)
+        blob_url = BlobService.upload_file(output_path, "demo.pptx")
+        return {"type": "pptx", "content": blob_url}
 
     # ─── Supervisor: LLM-driven tool decision + conditional RAG retrieval ────
     def supervisor(self, state: AgentState) -> AgentState:
@@ -169,7 +203,7 @@ class AgenticRAGWorkflow:
         Analyze the user request in the context of the conversation history and decide:
         1. Whether this is a simple greeting (yes/no).
         2. Whether to pull external context from RAG (yes/no). contents within RAG are related to Gen AI in art or music using Python.
-        3. Which tools to invoke (text_service/image_service/pdf_service/diagram_service).
+        3. Which tools to invoke (text_service/image_service/pdf_service/diagram_service/powerpoint_service).
         4. Any required components for final quality check.
         5. A brief reasoning for your decisions.
 
@@ -191,7 +225,7 @@ class AgenticRAGWorkflow:
         {{
         "is_simple_greeting": <true|false>,
         "pull_context": <true|false>,
-        "tools": ["text_service", "image_service", "pdf_service", "diagram_service"],
+        "tools": ["text_service", "image_service", "pdf_service", "diagram_service","powerpoint_service],
         "required_components": [ ... ],
         "reasoning": "..."
         }}
@@ -273,6 +307,14 @@ class AgenticRAGWorkflow:
                     state["messages"][-1].content  # Use just the current query for diagram generation
                 )
                 
+            elif t == "powerpoint_service":
+                results[t] = self._generate_powerpoint(
+                    state.get("rag_context"), 
+                    state.get("file_context"), 
+                    state["messages"][-1].content  # Use just the current query for powerpoint generation
+                )
+
+
         state["tool_responses"] = results
         state["pdf_generated"] = pdf_generated
         return state
@@ -298,6 +340,8 @@ class AgenticRAGWorkflow:
                 responses.append(f"PDF generated: {r.get('content', '(pdf url)')}")
             elif r["type"] == "diagram":
                 responses.append(f"Diagram generated: {r.get('content', '(diagram url)')}")
+            elif r["type"] == "powerpoint":
+                responses.append(f"Powerpoint generated: {r.get('content', '(powerpoint url)')}")
         
         combined_responses = "\n\n".join(responses)
         
@@ -372,6 +416,8 @@ class AgenticRAGWorkflow:
                 context_sections.append(f"Generated PDF URL: {r['content']}")
             elif r["type"] == "diagram" and r.get("content"):
                 context_sections.append(f"Generated diagram URL: {r['content']}")
+            elif r["type"] == "powerpoint" and r.get("content"):
+                context_sections.append(f"Generated powerpoint URL: {r['content']}")
         
         context = "\n\n".join(context_sections)
         
