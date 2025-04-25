@@ -1,3 +1,11 @@
 {
-  "cSpell.words": ["keyval", "multiagent", "sonner", "SSISTANT", "vectorstores"]
+  "cSpell.words": [
+    "Hackaton",
+    "keyval",
+    "multiagent",
+    "sonner",
+    "SSISTANT",
+    "uvicorn",
+    "vectorstores"
+  ]
 }
