@@ -13,6 +13,7 @@ from services.image_service import ImageGenerator
 from services.document_generator_service import DocumentGenerator
 from services.blob_service import BlobService
 from services.diagram_service import DiagramGenerator
+from services.coding_service import CodingService
 
 index_path = os.path.normpath(os.getcwd()) + "/index/faiss_index"
 print(index_path)
@@ -58,7 +59,8 @@ class AgenticRAGWorkflow:
             "pdf_service": self.pdf_service,
             "text_service": self.text_service,
             "diagram_service": self.diagram_service,
-            "quality_service": self.quality_check
+            "quality_service": self.quality_check,
+            "coding_service":self.coding_service
         }
         
         # Build workflow
@@ -139,6 +141,18 @@ class AgenticRAGWorkflow:
             "type": "diagram",
             #"content": diagram,
             "format": "markdown",
+        }
+    
+    @tool
+    def coding_service(context: str, query: str) -> dict:
+        """Generate, write and review code"""
+        prompt = f"generate a response for the user based on this input: {query}"
+
+        response  = llm.invoke(prompt).content
+        return {
+            "type": "text",
+            "content": response,
+            "format": "markdown"
         }
 
 
