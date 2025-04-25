@@ -94,15 +94,19 @@ const ConversationalChat = ({
               return (
                 <div
                   key={crypto.randomUUID()}
-                  className={`transition-all w-fit max-w-7/10 rounded-t-xl  py-2 text-gray-100  ${
+                  className={`transition-all w-fit rounded-t-xl py-2 text-gray-100  ${
                     type === "user"
-                      ? "self-end rounded-bl-xl bg-cyan-900 border-gray-600 border-1 px-3"
-                      : "self-start rounded-br-xl"
+                      ? "self-end rounded-bl-xl bg-cyan-900 border-gray-600 border-1 px-3 my-4  max-w-7/10 "
+                      : "self-start rounded-br-xl w-full max-w-9/10"
                   }`}
                 >
-                  <div className="wrapped-text-markdown formatted-anchor">
+                  <article
+                    className={`prose prose-md prose-invert ${
+                      type === "user" ? "text-white" : "max-w-none"
+                    }`}
+                  >
                     <Markdown>{content}</Markdown>
-                  </div>
+                  </article>
                 </div>
               );
             })}
