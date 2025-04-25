@@ -21,7 +21,7 @@ cd Hackaton2025-EducationalBot
 
 ### 2. API Local Setup
 
-#### Install Dependencies
+#### Install Python Dependencies
 
 Open a terminal in the root directory and go to `/api` directory:
 
@@ -34,7 +34,7 @@ pip install -r requirements.txt
 
 Create a `.env` file in the root directory:
 
-```env
+```basic
 LLAMA_API_KEY=
 HUGHINGFACE_TOKEN=
 AZURE_OPENAI_ENDPOINT=
@@ -60,17 +60,30 @@ API should be running as long as the terminal is not closed or halted.
 
 ### 3. Webapp Local Environment
 
-#### Webapp local setup
+#### Install Node Dependencies
 
-1. Open a terminal in the root directory of the cloned repository
-2. Navigate to the `/webapp` folder
-   `cd webapp`
-3. Create a .env file in that folder and add the following variable
-   `VITE_API_BASE_URL="http://127.0.0.1:8000"`
-4. Install dependencies using npm
-   `npm install`
-   type "y" or "yes" if terminal asks you for dependency approvals
-5. Execute the script to run the app
-   `npm run dev`
-6. If run successfully, the terminal will show the local URL the app is hosted at
-   ![alt text](image.png)
+Open a new terminal in the root directory of the cloned repository and go to `/webapp` directory:
+
+```bash
+cd webapp
+npm install
+```
+
+#### Add Environment Variables
+
+Create a `.env` file in the `/webapp` directory:
+
+```basic
+VITE_API_BASE_URL="http://127.0.0.1:8000"
+```
+
+#### Run React Application Locally
+
+Inside `/webapp` directory, run the following script
+
+```bash
+npm run dev
+```
+
+If run successfully, the terminal will show the local URL the app is hosted at
+![alt text](image.png)
