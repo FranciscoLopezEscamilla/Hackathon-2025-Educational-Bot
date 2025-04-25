@@ -9,21 +9,19 @@ import { ArrowPath } from "@/assets/ArrowPath";
 import { useChatStore } from "@/ui/state/chatStore";
 
 interface IProps {
-  handleChangeMessage: (value: string) => void;
-  message: string;
   handleOnSubmitForm: (formData: FormData) => void;
   loadingChatResponse: boolean;
   reSendLastMessage: () => void;
   showToast: (message: string) => void;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 const ConversationalChat = ({
-  handleChangeMessage,
-  message,
   handleOnSubmitForm,
   loadingChatResponse,
   reSendLastMessage,
   showToast,
+  inputRef,
 }: IProps) => {
   const [selectedAvailableTools, setSelectedAvailableTools] = useState<
     string[]
@@ -64,13 +62,16 @@ const ConversationalChat = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log(e);
     const fileList = filesRef.current?.files;
     // Build FormData
     const formData = new FormData();
     Array.from(fileList || []).forEach(
       (file) => formData.append("files", file) // must match FastAPI
     );
-    formData.append("query", message);
+    if (inputRef?.current) {
+      formData.append("query", inputRef.current.value);
+    }
     formData.append("message_history", JSON.stringify(chatHistory));
 
     // Debug: inspect contents
@@ -94,15 +95,19 @@ const ConversationalChat = ({
               return (
                 <div
                   key={crypto.randomUUID()}
-                  className={`transition-all w-fit max-w-7/10 rounded-t-xl  py-2 text-gray-100  ${
+                  className={`transition-all w-fit rounded-t-xl py-2 text-gray-100  ${
                     type === "user"
-                      ? "self-end rounded-bl-xl bg-cyan-900 border-gray-600 border-1 px-3"
-                      : "self-start rounded-br-xl"
+                      ? "self-end rounded-bl-xl bg-cyan-900 border-gray-600 border-1 px-3 my-4  max-w-7/10 "
+                      : "self-start rounded-br-xl w-full max-w-9/10"
                   }`}
                 >
-                  <div className="wrapped-text-markdown formatted-anchor">
+                  <article
+                    className={`prose prose-md prose-invert ${
+                      type === "user" ? "text-white" : "max-w-none"
+                    }`}
+                  >
                     <Markdown>{content}</Markdown>
-                  </div>
+                  </article>
                 </div>
               );
             })}
@@ -111,25 +116,27 @@ const ConversationalChat = ({
                 <p className="text-zinc-400">Thinking...</p>
               </div>
             )}
-            <div className="flex flex-row w-full gap-1">
-              <button
-                className="px-2 py-1 text-zinc-400 rounded-md align-middle hover:bg-zinc-700 cursor-pointer transition-all select-none"
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    chatHistory[chatHistory.length - 1].content
-                  );
-                  showToast("Message copied to clipboard");
-                }}
-              >
-                <CopyIcon size="16" />
-              </button>
-              <button
-                className="px-2 py-1 text-zinc-400 rounded-md align-middle hover:bg-zinc-700 cursor-pointer transition-all select-none"
-                onClick={reSendLastMessage}
-              >
-                <ArrowPath size="16" />
-              </button>
-            </div>
+            {!loadingChatResponse && (
+              <div className="flex flex-row w-full gap-1">
+                <button
+                  className="px-2 py-1 text-zinc-400 rounded-md align-middle hover:bg-zinc-700 cursor-pointer transition-all select-none"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      chatHistory[chatHistory.length - 1].content
+                    );
+                    showToast("Message copied to clipboard");
+                  }}
+                >
+                  <CopyIcon size="16" />
+                </button>
+                <button
+                  className="px-2 py-1 text-zinc-400 rounded-md align-middle hover:bg-zinc-700 cursor-pointer transition-all select-none"
+                  onClick={reSendLastMessage}
+                >
+                  <ArrowPath size="16" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -149,8 +156,10 @@ const ConversationalChat = ({
             minRows={2}
             className="w-full text-gray-300 rounded-md outline-none resize-none overflow-hidden"
             placeholder="Type your message here..."
-            value={message}
-            onChange={(e) => handleChangeMessage(e.target.value)}
+            ref={inputRef}
+            itemRef="input"
+            // value={message}
+            // onChange={(e) => handleChangeMessage(e.target.value)}
             required
           />
         </form>

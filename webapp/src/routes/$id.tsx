@@ -1,4 +1,4 @@
-import Chatbot from "@/ui/pages/Chatbot";
+import ChatbotView from "@/ui/pages/ChatbotView";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/$id")({
@@ -6,5 +6,5 @@ export const Route = createFileRoute("/$id")({
 });
 
 function RouteComponent() {
-  return <Chatbot />;
+  return <ChatbotView />;
 }

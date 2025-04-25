@@ -2,7 +2,7 @@ import MagnifyingGlass from "@/assets/MagnifyingGlass";
 import ContentList from "@/ui/components/ContentList";
 import ConversationalChat from "@/ui/components/ConversationalChat";
 import PromptSuggestionList from "@/ui/components/PromptSuggestionList";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../state/chatStore";
 import { historyStore } from "../state/historyStore";
 import { showSuccessToast } from "../utils/toast";
@@ -10,11 +10,11 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { loadHistory, saveHistory } from "../utils/persistentStorage";
 import { callToAgent } from "@/infrastructure/api/agent";
 
-const Chatbot = () => {
+const ChatbotView = () => {
   const { id: paramId } = useParams({ strict: false });
   const [loadingChatResponse, setLoadingChatResponse] =
     useState<boolean>(false);
-  const [promptMessage, setPromptMessage] = useState<string>("");
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const navigate = useNavigate();
 
   const {
@@ -28,7 +28,9 @@ const Chatbot = () => {
   const { setHistory, chats } = historyStore();
 
   const handleChangeMessage = (value: string) => {
-    setPromptMessage(value);
+    if (inputRef.current) {
+      inputRef.current.value = value;
+    }
   };
 
   const handleOnSubmitForm = async (formData: FormData) => {
@@ -149,8 +151,7 @@ const Chatbot = () => {
           className={`h-4/7 flex justify-center lg:${messages.length > 0 ? "items-end" : "items-center"} box-border sm:h-full sm:items-end transition-all`}
         >
           <ConversationalChat
-            handleChangeMessage={handleChangeMessage}
-            message={promptMessage}
+            inputRef={inputRef}
             handleOnSubmitForm={handleOnSubmitForm}
             loadingChatResponse={loadingChatResponse}
             reSendLastMessage={reSendLastMessage}
@@ -167,4 +168,4 @@ const Chatbot = () => {
   );
 };
 
-export default Chatbot;
+export default ChatbotView;
