@@ -1,6 +1,9 @@
 from langchain_core.prompts import PromptTemplate
 from models.llm_clients import LlmUtils
 from mermaid import Mermaid
+from langchain_core.runnables.graph_mermaid import draw_mermaid_png
+import uuid
+import os
 
 llm = LlmUtils.llm
 
@@ -24,7 +27,10 @@ class DiagramGenerator:
         return response.content
 
     def execute_mermaid(graph):
+        output_path = "//home//francisco//repos//hackaton2025-educationalbot//api//assets//diagrams"
+        file_id = uuid.uuid4()
 
         if "mermaid" in graph:
             graph = graph.replace("mermaid","").replace("`", "")
-        return Mermaid(graph)
+        draw_mermaid_png(mermaid_syntax=graph, output_file_path=f"{output_path}/{file_id}.png")
+        return os.path.join(output_path, f"{file_id}.png"), f"{file_id}.png"
