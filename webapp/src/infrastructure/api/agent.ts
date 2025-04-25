@@ -1,25 +1,13 @@
-import { ChatMessage } from "@/types/types";
 import axios from "axios";
 
-const AGENT_API_BASE_URL = "http://127.0.0.1:8000";
+const AGENT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+console.log(AGENT_API_BASE_URL)
 
-export const callToAgent = async (
-  message: string,
-  chatHistory: ChatMessage[]
-) => {
-  const response = await axios.post(
+export const callToAgent = async (formData: FormData) => {
+  console.log(formData);
+  const resp = await axios.post(
     `${AGENT_API_BASE_URL}/api/agents/agentic_rag_v3`,
-    {
-      query: message,
-      messages: chatHistory,
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    }
+    formData
   );
-
-  return response.data;
+  return resp.data;
 };

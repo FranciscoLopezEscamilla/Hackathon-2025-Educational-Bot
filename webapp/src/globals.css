@@ -34,3 +34,16 @@
 .gutter-stable {
   scrollbar-gutter: stable;
 }
+
+.wrapped-text-markdown {
+  p {
+    overflow-wrap: break-word;
+  }
+}
+
+.formatted-anchor {
+  a {
+    color: yellow;
+    font-weight: 700;
+  }
+}

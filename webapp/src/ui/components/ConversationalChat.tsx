@@ -1,16 +1,20 @@
 import AttachmentIcon from "@/assets/AttachmentIcon";
-import ImageIcon from "@/assets/ImageIcon";
 import RemoveIcon from "@/assets/RemoveIcon";
-import { ChatMessage, FileItem } from "@/types/types";
+import { Message } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
-import { useChatStore } from "../state/chatStore";
 import Markdown from "react-markdown";
+import TextareaAutosize from "react-textarea-autosize";
+import { CopyIcon } from "@/assets/CopyIcon";
+import { ArrowPath } from "@/assets/ArrowPath";
+import { useChatStore } from "@/ui/state/chatStore";
 
 interface IProps {
   handleChangeMessage: (value: string) => void;
   message: string;
-  handleOnSubmitForm: (message: string) => void;
+  handleOnSubmitForm: (formData: FormData) => void;
   loadingChatResponse: boolean;
+  reSendLastMessage: () => void;
+  showToast: (message: string) => void;
 }
 
 const ConversationalChat = ({
@@ -18,12 +22,14 @@ const ConversationalChat = ({
   message,
   handleOnSubmitForm,
   loadingChatResponse,
+  reSendLastMessage,
+  showToast,
 }: IProps) => {
   const [selectedAvailableTools, setSelectedAvailableTools] = useState<
     string[]
   >([]);
-  const [uploadedFiles, setUploadedFiles] = useState<FileItem[]>([]);
-  const chatHistory = useChatStore((state) => state.chatHistory);
+  const [uploadedFiles, setUploadedFiles] = useState<FileList | null>(null);
+  const chatHistory = useChatStore((state) => state.messages);
   const scrollRef = useRef<HTMLInputElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
 
@@ -44,35 +50,36 @@ const ConversationalChat = ({
   };
 
   const getFilesList = () => {
-    const files = filesRef.current?.files;
-    if (files) {
-      const fileList = Array.from(files).map((file): FileItem => {
-        return {
-          id: file.name + crypto.randomUUID(),
-          name: file.name,
-          extension: getFileExtension(file.name),
-        };
-      });
-      console.log(Array.from(files));
-      setUploadedFiles(fileList);
-    }
-  };
-
-  const getFileExtension = (fileName: string) => {
-    const fileExtension = fileName.split(".").pop() as string;
-    return fileExtension;
+    const files = filesRef.current?.files || null;
+    console.log(files);
+    setUploadedFiles(files);
   };
 
   const removeFiles = () => {
-    setUploadedFiles([]);
+    setUploadedFiles(null);
     if (filesRef.current) {
       filesRef.current.value = "";
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleOnSubmitForm(message);
+    const fileList = filesRef.current?.files;
+    // Build FormData
+    const formData = new FormData();
+    Array.from(fileList || []).forEach(
+      (file) => formData.append("files", file) // must match FastAPI
+    );
+    formData.append("query", message);
+    formData.append("message_history", JSON.stringify(chatHistory));
+
+    // Debug: inspect contents
+    for (const [key, val] of formData.entries()) {
+      console.log(key, val);
+    }
+
+    // Send to backend
+    handleOnSubmitForm(formData);
   };
 
   return (
@@ -83,17 +90,19 @@ const ConversationalChat = ({
           ref={scrollRef}
         >
           <div className="flex flex-col gap-4 w-full sm:w-full lg:w-5/8 mx-auto my-16">
-            {chatHistory.map(({ id, content, type }: ChatMessage) => {
+            {chatHistory.map(({ content, type }: Message) => {
               return (
                 <div
-                  key={id}
-                  className={`transition-all w-fit max-w-7/10 border-1 border-gray-600 rounded-t-xl px-3 py-2 bg-cyan-900 text-gray-100 ${
+                  key={crypto.randomUUID()}
+                  className={`transition-all w-fit max-w-7/10 rounded-t-xl  py-2 text-gray-100  ${
                     type === "user"
-                      ? "self-end rounded-bl-xl"
+                      ? "self-end rounded-bl-xl bg-cyan-900 border-gray-600 border-1 px-3"
                       : "self-start rounded-br-xl"
                   }`}
                 >
-                  <Markdown>{content}</Markdown>
+                  <div className="wrapped-text-markdown formatted-anchor">
+                    <Markdown>{content}</Markdown>
+                  </div>
                 </div>
               );
             })}
@@ -102,24 +111,48 @@ const ConversationalChat = ({
                 <p className="text-zinc-400">Thinking...</p>
               </div>
             )}
+            <div className="flex flex-row w-full gap-1">
+              <button
+                className="px-2 py-1 text-zinc-400 rounded-md align-middle hover:bg-zinc-700 cursor-pointer transition-all select-none"
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    chatHistory[chatHistory.length - 1].content
+                  );
+                  showToast("Message copied to clipboard");
+                }}
+              >
+                <CopyIcon size="16" />
+              </button>
+              <button
+                className="px-2 py-1 text-zinc-400 rounded-md align-middle hover:bg-zinc-700 cursor-pointer transition-all select-none"
+                onClick={reSendLastMessage}
+              >
+                <ArrowPath size="16" />
+              </button>
+            </div>
           </div>
         </div>
       )}
       {chatHistory.length === 0 && (
         <h1 className="text-2xl font-semibold">
-          Welcome to ABC Project, accenture.id
+          Welcome to ABC Project, francisco.lopez
         </h1>
       )}
       {/* message box */}
       <div className="w-full sm:w-full lg:w-5/8 bg-zinc-700 rounded-xl p-4 flex flex-col gap-2 box-border">
-        <form id="prompt-form" onSubmit={handleSubmit}>
-          <textarea
-            className="w-full h-full text-gray-300 rounded-md outline-none resize-none"
+        <form
+          id="prompt-form"
+          onSubmit={handleSubmit}
+          encType="multipart/form-data"
+        >
+          <TextareaAutosize
+            minRows={2}
+            className="w-full text-gray-300 rounded-md outline-none resize-none overflow-hidden"
             placeholder="Type your message here..."
             value={message}
             onChange={(e) => handleChangeMessage(e.target.value)}
             required
-          ></textarea>
+          />
         </form>
         <div className="flex flex-row gap-2 justify-between ">
           <span className="flex flex-row gap-4 items-end ">
@@ -127,6 +160,7 @@ const ConversationalChat = ({
               <AttachmentIcon size="16" />
               <input
                 type="file"
+                name="files"
                 className="hidden"
                 id="file"
                 placeholder="w"
@@ -138,10 +172,10 @@ const ConversationalChat = ({
                 Attach files
               </label>
             </span>
-            <button className=" text-white rounded-md transition-all select-none flex justify-between items-center gap-1 cursor-pointer hover:text-zinc-400">
+            {/* <button className=" text-white rounded-md transition-all select-none flex justify-between items-center gap-1 cursor-pointer hover:text-zinc-400">
               <ImageIcon size="16" />
               Use Image
-            </button>
+            </button> */}
           </span>
           <button
             type="submit"
@@ -152,14 +186,14 @@ const ConversationalChat = ({
             Send
           </button>
         </div>
-        {uploadedFiles.length > 0 && (
+        {Array.from(uploadedFiles ?? []).length > 0 && (
           <div className="flex flex-row gap-2 w-full items-center justify-between ">
             <div className="flex gap-4 ">
-              {uploadedFiles.map(({ id, extension, name }) => {
+              {Array.from(uploadedFiles ?? []).map(({ lastModified, name }) => {
                 return (
-                  <div className="flex" key={id}>
+                  <div className="flex" key={lastModified}>
                     <p className="text-gray-400 truncate max-w-20">{name}</p>
-                    <p className="text-gray-400 truncate">.{extension}</p>
+                    {/* <p className="text-gray-400 truncate">.{extension}</p> */}
                   </div>
                 );
               })}

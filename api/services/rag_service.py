@@ -24,15 +24,13 @@ class RAG:
         print("Calling RAG...")
         vector_store = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
         retriever = vector_store.as_retriever()
-        template = """Answer questions based only on the following context: 
+        template = """return the most relevant information from the context below to answer the question.
         
         ### CONTEXT ###
         {context}
         
         Question: {question}
-        
-        If the context doesn't provide enough information to answer the question, say that you don't know.
-        Do not respond with information outside the previous context."""
+        """
 
         prompt = PromptTemplate.from_template(template)
 
@@ -44,4 +42,5 @@ class RAG:
         )
 
         result = chain.invoke(query)
+        print("rag_context", result)
         return result

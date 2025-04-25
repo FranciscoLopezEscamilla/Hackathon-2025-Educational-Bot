@@ -16,8 +16,27 @@ export interface FileItem {
   extension: string;
 }
 
-export interface ChatMessage {
+export interface ChatHistory {
+  chats: Chat[];
+  user: string | null;
+  //
+}
+
+export interface Chat {
+  id: string | null;
+  updatedAt: string;
+  messages: Message[];
+}
+
+export interface Message {
   id: string;
   content: string;
   type: "assistant" | "user" | "system";
+}
+
+export interface ChatStoreActions {
+  addMessageToChat: (message: Message) => void;
+  removeMessagesFromChat: (amount: number) => void;
+  setId: (id: string) => void;
+  loadState: (state: Chat) => void;
 }

@@ -8,7 +8,3 @@ export const useAuthenticationStore = create(
     logout: () => set({ isAuthenticated: false }),
   })
 );
-
-export const getIsAuthenticated = () => {
-  return useAuthenticationStore.getState().isAuthenticated;
-};
