@@ -15,6 +15,7 @@ index_path = parent_dir + "\\faiss_index"
 
 azure_search_endpoint = os.getenv('AZURE_SEARCH_ENDPOINT')
 azure_search_key = os.getenv('AZURE_SEARCH_KEY')
+search_client = SearchClient(azure_search_endpoint, "hackaton-2025", AzureKeyCredential(azure_search_key))
 
 class Database():
 
@@ -52,7 +53,7 @@ class Database():
         return result_string
     
     def get_indexed_files():
-        search_client = SearchClient(azure_search_endpoint, "hackaton-2025", AzureKeyCredential(azure_search_key))
+        
         
         document_count = search_client.get_document_count()
 

@@ -252,7 +252,12 @@ class AgenticRAGWorkflow:
             return state
                 
         # Conditionally retrieve context
-        state["rag_context"] = RAG.get_context_from_index(user_q)
+        #state["rag_context"] = RAG.get_context_from_index(user_q)
+        
+        # context from ai search index
+        state["rag_context"] = RAG.get_context_from_aisearch(user_q)
+
+
         # if decision.get("pull_context"):
         #     print("Retrieving context from RAG")
         # else:
