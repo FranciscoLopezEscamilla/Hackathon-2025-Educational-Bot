@@ -38,7 +38,6 @@ An AI‐driven, retrieval-augmented chatbot ingests all onboarding materials and
 - Python 3.8+
 - Git
 - Node.js (**>= 18.x**) and npm (**>= 9.x**) installed on your machine
-- npm package manager v10.7.0 or later (typically installed with NodeJS)
 
 ## **Getting Started**
 
