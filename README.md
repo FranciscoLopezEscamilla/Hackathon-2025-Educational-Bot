@@ -1,6 +1,37 @@
-# Hackaton2025
+# AI-SSISTANT
 
 Hackaton 2025 - Educational Bot
+
+## 🌍 Problem
+
+Despite comprehensive documentation and processes, consultants still struggle to find critical project information quickly and face delayed or unanswered queries, leading to frustration and knowledge gaps. Inconsistent, impersonal training and staggered start dates make delivering a cohesive, personalized onboarding experience time-consuming and error-prone.
+
+## 💡 Solution
+
+An AI‐driven, retrieval-augmented chatbot ingests all onboarding materials and project files to act as each consultant’s 24/7 personal assistant—delivering instant, context-aware answers and bite-sized, role-specific micro-training directly within existing collaboration tools. This empowers new joiners to self-educate, accelerate ramp-up, and frees up team leads from repetitive training tasks.
+
+## 🧠 How It Works
+
+- Key features:
+  - Agentic functionality
+  - Context Aware
+  - RAG
+  - Content Generation (PDFs, Slides, Diagrams, Images)
+  - Custom UI
+- Tech Stack
+  - Frontend: `React / TypeScript / TailwindCSS`
+  - Backend: `Python / OpenAI / FastAPI`
+
+---
+
+## 🎬 Demo
+
+- **Live Demo:** [Link Here](#)
+- **Video walkthrough:** [Link Here](#)
+
+---
+
+## 🛠️ How to Run It
 
 ## **Prerequisites**
 
