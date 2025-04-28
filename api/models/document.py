@@ -15,3 +15,7 @@ class DocumentRequest(BaseModel):
 
 class ImageItem(BaseModel):
     path: str
+
+class DocumentMetadata(BaseModel):
+    name: str
+    url: str
