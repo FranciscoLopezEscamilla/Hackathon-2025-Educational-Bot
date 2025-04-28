@@ -20,7 +20,7 @@ An AI‐driven, retrieval-augmented chatbot ingests all onboarding materials and
   - Custom UI
 - Tech Stack
   - Frontend: `React / TypeScript / TailwindCSS`
-  - Backend: `Python / OpenAI / FastAPI`
+  - Backend: `Python / LangGraph / OpenAI / FastAPI`
 
 ---
 
