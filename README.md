@@ -8,7 +8,7 @@ Despite comprehensive documentation and processes, consultants still struggle to
 
 ## 💡 Solution
 
-An AI‐driven, retrieval-augmented chatbot ingests all onboarding materials and project files to act as each consultant’s 24/7 personal assistant—delivering instant, context-aware answers and bite-sized, role-specific micro-training directly within existing collaboration tools. This empowers new joiners to self-educate, accelerate ramp-up, and frees up team leads from repetitive training tasks.
+An AI‐driven, retrieval-augmented chatbot ingests all onboarding materials and project files to act as each new joiner’s 24/7 personal assistant—delivering instant, context-aware answers and bite-sized, role-specific micro-training directly within existing collaboration tools. This empowers new joiners to self-educate, accelerate ramp-up, and frees up team leads from repetitive training tasks.
 
 ## 🧠 How It Works
 
