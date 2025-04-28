@@ -147,10 +147,9 @@ class AgenticRAGWorkflow:
         }
 
     def _generate_powerpoint(self, rag_context: str, file_context: str, query: str) -> dict:
-        print("ENTERED PPT GENERATION")
+        print("ENTERED PPT GENERATION...")
 
-        
-        sample_request = DocumentRequest(
+        request = DocumentRequest(
             title="Demo Document",
             pages=[
                 DocumentContent(
@@ -175,7 +174,7 @@ class AgenticRAGWorkflow:
 
         output_path = "../output"
 
-        ppt_file = PptGenerator.generate_ppt(sample_request, output_path)
+        PptGenerator.generate_ppt(request, output_path)
         blob_url = BlobService.upload_file(output_path, "demo.pptx")
         return {"type": "pptx", "content": blob_url}
 

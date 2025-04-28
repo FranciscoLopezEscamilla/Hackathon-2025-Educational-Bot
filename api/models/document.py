@@ -19,3 +19,7 @@ class ImageItem(BaseModel):
 class DocumentMetadata(BaseModel):
     name: str
     url: str
+
+class RampUpdDocuments(BaseModel):
+    generated_files: Optional[List[DocumentMetadata]]
+    indexed_files : Optional[List[DocumentMetadata]]
