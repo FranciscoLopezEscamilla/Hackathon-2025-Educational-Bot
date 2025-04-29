@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import employee_routes, multi_agent_routes
+from routes import multi_agent_routes, blob_routes
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -13,12 +13,12 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-### employee_routes exposes 2 endpoints:
 # api/employees
 # api/employees/{id} 
-app.include_router(employee_routes.router, prefix="/api")
+#app.include_router(employee_routes.router, prefix="/api")
 #app.include_router(text_routes.router, prefix="/api")
 #app.include_router(document_generator_routes.router, prefix="/api")
 #app.include_router(index_routes.router, prefix="/api")
 #app.include_router(image_routes.router, prefix="/api")
 app.include_router(multi_agent_routes.router, prefix="/api")
+app.include_router(blob_routes.router, prefix="/api")

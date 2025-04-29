@@ -6,6 +6,7 @@ import uuid
 import os
 
 llm = LlmUtils.llm
+parent_dir = os.getcwd()
 
 class DiagramGenerator:
 
@@ -27,10 +28,14 @@ class DiagramGenerator:
         return response.content
 
     def execute_mermaid(graph):
-        output_path = "//home//francisco//repos//hackaton2025-educationalbot//api//assets//diagrams"
+        output_path = parent_dir + "/assets/diagrams"
+        print(output_path)
         file_id = uuid.uuid4()
 
         if "mermaid" in graph:
             graph = graph.replace("mermaid","").replace("`", "")
-        draw_mermaid_png(mermaid_syntax=graph, output_file_path=f"{output_path}/{file_id}.png")
+
+        draw_mermaid_png(mermaid_syntax=graph, 
+                         output_file_path=os.path.join(output_path, f"{file_id}.png"))
+        
         return os.path.join(output_path, f"{file_id}.png"), f"{file_id}.png"

@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { loadHistory, saveHistory } from "@/ui/utils/persistentStorage";
 import RemoveIcon from "@/assets/RemoveIcon";
+import moment from "moment";
 
 export const Route = createFileRoute("/about")({
   component: RouteComponent,
@@ -45,7 +46,9 @@ function RouteComponent() {
               className="flex flex-col gap-2 p-4 border-1 border-zinc-700 rounded-xl w-70 hover:bg-zinc-700 transition-all "
             >
               <div className="flex flex-row gap-2 items-center">
-                <p className="text-xl font-bold ">{chat.updatedAt}</p>
+                <p className="text-xl font-bold ">
+                  {moment(chat.updatedAt).format("MMMM Do YYYY, h:mm:ss a")}
+                </p>
                 <button
                   className="hover:bg-zinc-600 rounded-md h-fit flex flex-row items-center gap-1 self-start"
                   onClick={() => handleDeleteChat(chat.id)}

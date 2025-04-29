@@ -8,7 +8,7 @@ const SideNavBar = () => {
     <nav className=" text-gray-400 max-w-400">
       <div className="pt-2 pb-10 px-4">
         <h1 className="font-bold text-4xl md:text-wrap 2xl:text-nowrap text-gray-100">
-          AI-SSISTANT.
+          RampUp AI
         </h1>
       </div>
       <ul className="text-lg font-semibold flex flex-col w-full">

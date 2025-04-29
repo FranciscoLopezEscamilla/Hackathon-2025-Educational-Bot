@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 /* Scrollbar Track */
 ::-webkit-scrollbar {
   width: 16px; /* Adjust width */
@@ -46,4 +47,23 @@
     color: yellow;
     font-weight: 700;
   }
+}
+
+@keyframes typing-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(0.1em);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.typing span {
+  opacity: 0;
+  display: inline-block;
+  will-change: opacity, transform; /* hint to compositor */
+  animation: typing-reveal 0.1s ease forwards;
+  animation-delay: var(--delay);
 }
