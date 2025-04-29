@@ -14,9 +14,9 @@ class BlobService:
         file_extension = file_name.split(".")[-1]
         
         if file_extension == "png":
-            file_name = f"{file_name}.png"
+            file_name = f"{file_name}"
         elif file_extension == "pptx":
-            file_name = f"{file_name}.pptx"
+            file_name = f"{file_name}"
         else:
             file_name = f"{file_name}.pdf"            
 

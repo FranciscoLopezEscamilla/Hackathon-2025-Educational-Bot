@@ -16,6 +16,10 @@ LOCAL_IMG_DIR="../assets/generated_images/2025-04-21-11-57-47"
 class PptGenerator:
 
 
+    def clean_request(request:str):
+        final_req = request.replace("python","").replace("`", "")
+        return final_req
+
     def generate_ppt_request(context: str):
         "generate a sample request for creating a ppt file using pptx library"
 
@@ -25,8 +29,18 @@ class PptGenerator:
         ### Context ###
         {context}
         Your job is to generate a sample request following the example below.
-        Return just the sample payload. Nothing else.
+        
 
+        The title field is the title of the document.
+        The pages field contain a list of the different slides and their content.
+        The TextItem contains two properties: type and content
+            the type is a string and can have the following values: "title", "subtitle", "paragraph" 
+            the content a string and represents the content of the text item
+        
+        The DocumentContent object is a list of TextItems.
+        
+        Please generate a sample request based on the context above. feel free to decide how many slides, the titles, paragraphs and content
+        of each slide.
 
         ### Example of a request ###
         sample_request = DocumentRequest(
@@ -37,26 +51,24 @@ class PptGenerator:
                         TextItem(type="header", content="Welcome"),
                         TextItem(type="paragraph", content="This is a sample slide."),
                     ],
-                    images=[
-                        ImageItem(path="sample_image.png")
-                    ]
                 ),
 
                 DocumentContent(
                     text_items=[
                         TextItem(type="subheader", content="Second Slide"),
                         TextItem(type="paragraph", content="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus luctus urna sed urna ultricies ac tempor dui sagittis. In condimentum facilisis porta.\nFusce sed felis eget velit aliquet faucibus. Praesent ac massa at ligula laoreet iaculis."),
-                    ],
-                    images=[]
+                    ],  
                 )
             ]
         )
+
+        Return just the sample payload. Nothing else.
         """
 
         prompt_template = PromptTemplate.from_template(prompt)
         chain  = prompt_template | llm
         sample_request = chain.invoke({"context": context})
-        return sample_request
+        return sample_request.content
 
     def generate_ppt(doc_data, output_path: str):
         prs = Presentation()

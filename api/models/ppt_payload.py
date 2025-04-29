@@ -1,13 +1,63 @@
 from models.document import DocumentContent, DocumentRequest, TextItem
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import PromptTemplate
+from models.llm_clients import LlmUtils
+from pydantic import BaseModel
+import json
+llm = LlmUtils.llm
 
-def create_sample_request():
+class SampleRequest(BaseModel):
+    title:str
+    header: str
+    headerContent: str
+    subheader: str
+    subheaderContent: str
+
+parser = JsonOutputParser(pydantic_object=SampleRequest)
+
+def create_sample_request(text):
+    """Create sample request for generate ppt files"""
+
+    prompt = """Your job is to read and analyze the following text: {text}
+    
+    You need to understand the previos text and generate the following values:
+
+    Title
+    Header
+    Content of header
+    Sub header
+    Content of sub header
+
+    return a valid json file with the values like this:
+
+    "title": "value",
+    "header": "value",
+    "headerContent": "value",
+    "subheader": "value",
+    "subheaderContent": "value"
+
+    """
+
+    prompt_template = PromptTemplate(template=prompt,
+                                     input_variables=["text"],
+                                     partial_variables={"format_instructions": parser.get_format_instructions()})
+    chain  = prompt_template | llm | parser
+    response = chain.invoke({"text": text})
+    
+    
+    title = response["title"]
+    header = response["header"]
+    content_header = response["headerContent"]
+    sub_header = response["subheader"]
+    sub_header_content = response["subheaderContent"]
+
     sample_request = DocumentRequest(
-            title="Demo Document",
+            title=title,
             pages=[
                 DocumentContent(
                     text_items=[
-                        TextItem(type="header", content="Welcome"),
-                        TextItem(type="paragraph", content="This is a sample slide."),
+                        TextItem(type="header", content=header),
+                        TextItem(type="paragraph", content=content_header),
                     ],
                     images=[
                         #ImageItem(path="sample_image.png")
@@ -16,11 +66,12 @@ def create_sample_request():
 
                 DocumentContent(
                     text_items=[
-                        TextItem(type="subheader", content="Second Slide"),
-                        TextItem(type="paragraph", content="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus luctus urna sed urna ultricies ac tempor dui sagittis. In condimentum facilisis porta.\nFusce sed felis eget velit aliquet faucibus. Praesent ac massa at ligula laoreet iaculis."),
+                        TextItem(type="subheader", content=sub_header),
+                        TextItem(type="paragraph", content=sub_header_content),
                     ],
                     images=[]
                 )
+
             ]
         )
     
