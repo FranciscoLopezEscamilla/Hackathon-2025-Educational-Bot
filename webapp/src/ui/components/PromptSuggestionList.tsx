@@ -12,13 +12,13 @@ const PromptSuggestionList = ({ handleOnSubmitForm }: IProps) => {
         className={cardStyle}
         onClick={() => {
           const text =
-            "What should I start doing as a new joiner in ABC Project?";
+            "What should I start doing as a new joiner in NebulaCore Project?";
           const formData = new FormData();
           formData.append("query", text);
           handleOnSubmitForm(formData);
         }}
       >
-        <p>What should I start doing as a new joiner in ABC Project?</p>
+        <p>What should I start doing as a new joiner in NebulaCore Project?</p>
       </div>
       <div
         className={cardStyle}
@@ -29,7 +29,7 @@ const PromptSuggestionList = ({ handleOnSubmitForm }: IProps) => {
           handleOnSubmitForm(formData);
         }}
       >
-        <p>Give me a summary of the Sales_Data_Q2.xlsx file</p>
+        <p>Give me a summary of the onboarding file</p>
       </div>
       <div
         className={cardStyle}

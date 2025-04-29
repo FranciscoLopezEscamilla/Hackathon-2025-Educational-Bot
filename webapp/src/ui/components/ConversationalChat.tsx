@@ -23,9 +23,6 @@ const ConversationalChat = ({
   showToast,
   inputRef,
 }: IProps) => {
-  const [selectedAvailableTools, setSelectedAvailableTools] = useState<
-    string[]
-  >([]);
   const [uploadedFiles, setUploadedFiles] = useState<FileList | null>(null);
   const chatHistory = useChatStore((state) => state.messages);
   const scrollRef = useRef<HTMLInputElement>(null);
@@ -36,16 +33,6 @@ const ConversationalChat = ({
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [chatHistory]);
-
-  const handleToggleAvailableTools = (tool: string) => {
-    if (selectedAvailableTools.includes(tool)) {
-      setSelectedAvailableTools(
-        selectedAvailableTools.filter((t) => t !== tool)
-      );
-    } else {
-      setSelectedAvailableTools([...selectedAvailableTools, tool]);
-    }
-  };
 
   const getFilesList = () => {
     const files = filesRef.current?.files || null;
@@ -74,14 +61,17 @@ const ConversationalChat = ({
     }
     formData.append("message_history", JSON.stringify(chatHistory));
 
-    // Debug: inspect contents
     for (const [key, val] of formData.entries()) {
       console.log(key, val);
     }
 
-    // Send to backend
     handleOnSubmitForm(formData);
+
+    removeFiles();
   };
+
+  const toolClass =
+    "bg-zinc-800 text-gray-300 p-2 px-4 border-1 border-zinc-600 rounded-md hover:bg-zinc-700 transition-all cursor-pointer select-none";
 
   return (
     <div className="w-full h-full flex flex-col min-h-0 grow gap-2 justify-center items-center">
@@ -142,7 +132,7 @@ const ConversationalChat = ({
       )}
       {chatHistory.length === 0 && (
         <h1 className="text-2xl font-semibold">
-          Welcome to ABC Project, francisco.lopez
+          Welcome to NebulaCore Project
         </h1>
       )}
       {/* message box */}
@@ -158,8 +148,6 @@ const ConversationalChat = ({
             placeholder="Type your message here..."
             ref={inputRef}
             itemRef="input"
-            // value={message}
-            // onChange={(e) => handleChangeMessage(e.target.value)}
             required
           />
         </form>
@@ -181,10 +169,6 @@ const ConversationalChat = ({
                 Attach files
               </label>
             </span>
-            {/* <button className=" text-white rounded-md transition-all select-none flex justify-between items-center gap-1 cursor-pointer hover:text-zinc-400">
-              <ImageIcon size="16" />
-              Use Image
-            </button> */}
           </span>
           <button
             type="submit"
@@ -202,7 +186,6 @@ const ConversationalChat = ({
                 return (
                   <div className="flex" key={lastModified}>
                     <p className="text-gray-400 truncate max-w-20">{name}</p>
-                    {/* <p className="text-gray-400 truncate">.{extension}</p> */}
                   </div>
                 );
               })}
@@ -221,22 +204,24 @@ const ConversationalChat = ({
         <div className="w-full">Available Tools:</div>
         <div className="flex flex-row gap-2 ">
           <div
-            className={`${selectedAvailableTools.includes("Image Generation") ? "bg-zinc-700 text-cyan-500" : "bg-zinc-800 text-gray-300"} p-2 px-4 border-1 border-zinc-600 rounded-md hover:bg-zinc-700 transition-all cursor-pointer select-none`}
-            onClick={() => handleToggleAvailableTools("Image Generation")}
+            className={toolClass}
           >
             Image Generation
           </div>{" "}
           <div
-            className={`${selectedAvailableTools.includes("Diagram Generation") ? "bg-zinc-700 text-cyan-500" : "bg-zinc-800 text-gray-300"} p-2 px-4 border-1 border-zinc-600 rounded-md hover:bg-zinc-700 transition-all cursor-pointer select-none`}
-            onClick={() => handleToggleAvailableTools("Diagram Generation")}
+            className={toolClass}
           >
             Diagram Generation
           </div>
           <div
-            className={`${selectedAvailableTools.includes("Content Writer") ? "bg-zinc-700 text-cyan-500" : "bg-zinc-800 text-gray-300"} p-2 px-4 border-1 border-zinc-600 rounded-md hover:bg-zinc-700 transition-all cursor-pointer select-none`}
-            onClick={() => handleToggleAvailableTools("Content Writer")}
+            className={toolClass}
           >
-            Content Writer
+            PDF Writer
+          </div>
+          <div
+            className={toolClass}
+          >
+            Slider Generation
           </div>
         </div>
       </div>

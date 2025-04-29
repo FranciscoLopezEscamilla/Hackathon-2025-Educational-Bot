@@ -10,8 +10,11 @@ import json
 import logging
 from services.blob_service import BlobService
 from services.diagram_service import DiagramGenerator
+from services.document_service import PptGenerator
+from models.document import DocumentRequest, DocumentContent, TextItem, ImageItem
+from models.ppt_payload import create_sample_request
 
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 
 MAX_ITERATIONS = 3  # Maximum number of refinement iterations allowed
 
@@ -127,7 +130,7 @@ class AgenticRAGWorkflow:
             content = response
             
         print("ENTERED PDF GENERATION")
-        logging.info(f"Generated PDF Title: {title}")
+        # logging.info(f"Generated PDF Title: {title}")
         pdf_file = DocumentGenerator.create(title=title, content=content)
         blob_url = BlobService.upload_file(pdf_file, title)    
 
@@ -149,6 +152,23 @@ class AgenticRAGWorkflow:
             "content": blob_url,
         }
 
+    def _generate_powerpoint(self, rag_context: str, file_context: str, query: str) -> dict:
+        print("ENTERED PPT GENERATION...")
+
+        
+        combined_context = f"{rag_context}\n{file_context}"
+        prompt = f"""Return an appropiate name for a file that covers this content: {combined_context}.
+        Return just one name. 
+        Do not add the extension, just the file name without extension.
+        nothing else"""
+        title = llm.invoke([HumanMessage(content=prompt)]).content
+        request = create_sample_request(combined_context)
+        print(title)
+        output_path = "../output"
+
+        PptGenerator.generate_ppt(request, output_path)
+        blob_url = BlobService.upload_file(output_path, f"{title}.pptx")
+        return {"type": "pptx", "content": blob_url}
 
     # ─── Supervisor: LLM-driven tool decision + conditional RAG retrieval ────
     def supervisor(self, state: AgentState) -> AgentState:
@@ -171,7 +191,8 @@ class AgenticRAGWorkflow:
         - image_service: Creates images based on user queries and context.
         - pdf_service: Generates new, structured PDF documents (only if explicitly requested by the user, such as 'create a PDF', 'export as PDF', or similar).
         - diagram_service: Produces conceptual diagrams or visualizations from context and queries.
-        - RAG (Retrieval-Augmented Generation): Retrieves relevant information from a knowledge base about ART USING GEN AI.
+        - powerpoint_service: Generates PowerPoint presentations based on user queries and context.
+        - RAG (Retrieval-Augmented Generation): Retrieves relevant information from a knowledge base about NebulaCore Project.
 
         Workflow state flags you can use:
         - has_uploaded_pdf: True if the user uploaded a file.
@@ -188,7 +209,7 @@ class AgenticRAGWorkflow:
 
         Instructions:
         1. Decide if this is a simple greeting (set simple_response and skip_to_response if so).
-        2. Decide if you need to pull external context from RAG (rag_context). RAG contains information related to ART USING GEN AI.
+        2. Decide if you need to pull external context from RAG (rag_context). RAG contains information related to NebulaCore Project.
         3. If the user query is related to art, generative AI, or could benefit from external knowledge, you SHOULD pull RAG context.
         4. Select which tools to use (text_service, image_service, pdf_service, diagram_service) and explain why.
         5. If the user uploaded a PDF, use its content for context.
@@ -201,7 +222,7 @@ class AgenticRAGWorkflow:
         {{
           "is_simple_greeting": <true|false>,
           "pull_context": <true|false>,
-          "tools": ["text_service", "image_service", "pdf_service", "diagram_service"],
+          "tools": ["text_service", "image_service", "pdf_service", "diagram_service", powerpoint_service],
           "required_components": [ ... ],
           "reasoning": "..."
         }}
@@ -230,7 +251,7 @@ class AgenticRAGWorkflow:
 
         # Pull RAG context if needed
         if decision.get("pull_context", False):
-            state["rag_context"] = RAG.get_context_from_index(user_q)
+            state["rag_context"] = RAG.get_context_from_aisearch(user_q)
         else:
             state["rag_context"] = state.get("rag_context") or ""
 
@@ -241,7 +262,7 @@ class AgenticRAGWorkflow:
         results = state.get("tool_responses", {}) if state.get("iteration_count", 0) > 1 else {}
         pdf_generated = state.get("pdf_generated", False)
 
-        logging.info(f"Executing tools. Iteration: {state.get('iteration_count', 0)}")
+        # logging.info(f"Executing tools. Iteration: {state.get('iteration_count', 0)}")
 
         for t in state.get("needed_tools", []):
             if t == "text_service":
@@ -269,6 +290,14 @@ class AgenticRAGWorkflow:
                     state.get("file_context"),
                     state["messages"][-1].content
                 )
+                
+            elif t == "powerpoint_service":
+                results[t] = self._generate_powerpoint(
+                    state.get("rag_context"), 
+                    state.get("file_context"), 
+                    state["messages"][-1].content  # Use just the current query for powerpoint generation
+                )
+
 
         state["tool_responses"] = results
         state["pdf_generated"] = pdf_generated
@@ -280,7 +309,7 @@ class AgenticRAGWorkflow:
             state["skip_to_response"] = True
             return state
 
-        logging.info(f"Quality check iteration: {state.get('iteration_count', 0)}")
+        # logging.info(f"Quality check iteration: {state.get('iteration_count', 0)}")
 
         responses = []
         for tool_name, r in state.get("tool_responses", {}).items():
@@ -355,6 +384,8 @@ class AgenticRAGWorkflow:
                 context_sections.append(f"**Generated PDF:**\n\n[📄 Download PDF]({r['content']})")
             elif r["type"] == "diagram" and r.get("content"):
                 context_sections.append(f"**Generated diagram:**\n\n![Diagram]({r['content']})\n\n[View Diagram]({r['content']})")
+            elif r["type"] == "pptx" and r.get("content"):
+                context_sections.append(f"**Generated powerpoint:** \n\n![Diagram]({r['content']})\n\n[View Diagram]({r['content']})")
         
         context = "\n\n---\n\n".join(context_sections)
         

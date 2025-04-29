@@ -1,6 +1,6 @@
-# AI-SSISTANT
+# RampUp AI
 
-Hackaton 2025 - Educational Bot
+Hackaton 2025 - Wise assistant for project knowledge
 
 ## 🌍 Problem
 
@@ -8,26 +8,26 @@ Despite comprehensive documentation and processes, consultants still struggle to
 
 ## 💡 Solution
 
-An AI‐driven, retrieval-augmented chatbot ingests all onboarding materials and project files to act as each new joiner’s 24/7 personal assistant—delivering instant, context-aware answers and bite-sized, role-specific micro-training directly within existing collaboration tools. This empowers new joiners to self-educate, accelerate ramp-up, and frees up team leads from repetitive training tasks.
+An AI‐driven, retrieval-augmented chatbot ingests all onboarding materials and project files to act as each new joiner’s 24/7 personal assistant—delivering instant, context-aware answers and bite-sized, role-specific micro-training directly within existing collaboration tools, as well as text/visual content generation on demand. This empowers new joiners to self-educate, accelerate ramp-up, and frees up team leads from repetitive training tasks.
 
 ## 🧠 How It Works
 
 - Key features:
-  - Agentic functionality
+  - Agentic Functionality
   - Context Aware
-  - RAG
+  - RAG (Retrieval Augmented Generation)
   - Content Generation (PDFs, Slides, Diagrams, Images)
   - Custom UI
 - Tech Stack
-  - Frontend: `React / TypeScript / TailwindCSS`
-  - Backend: `Python / LangGraph / OpenAI / FastAPI`
+  - Frontend: `React / TypeScript / Tailwind`
+  - Backend: `Python / LangGraph / OpenAI / FastAPI / Azure Blob Service`
 
 ---
 
 ## 🎬 Demo
 
-- **Live Demo:** [Link Here](#)
-- **Video walkthrough:** [Link Here](#)
+- **Live Demo: (To Be Confirmed)** [Link Here](#)
+- **Video walkthrough: (WIP)** [Link Here](#)
 
 ---
 
@@ -65,17 +65,16 @@ pip install -r requirements.txt
 Create a `.env` file in the root directory:
 
 ```basic
-LLAMA_API_KEY=
-HUGHINGFACE_TOKEN=
 AZURE_OPENAI_ENDPOINT=
 AZURE_OPENAI_API_KEY=
 AZURE_OPENAI_API_VERSION=
 AZURE_OPENAI_CHAT_DEPLOYMENT_NAME=
 GPT_IMAGES_DEPLOYMENT_NAME=
 AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME=
-GLOBAL_LLM_SERVICE=
 CONTAINER=
 CONN_STR=
+AZURE_SEARCH_ENDPOINT=
+AZURE_SEARCH_KEY=
 ```
 
 #### Run API
@@ -117,3 +116,7 @@ npm run dev
 
 If run successfully, the terminal will show the local URL the app is hosted at
 ![alt text](image.png)
+
+## Workflow
+
+![alt text](image-1.png)

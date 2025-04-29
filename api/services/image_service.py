@@ -1,6 +1,8 @@
 from langchain_core.prompts import PromptTemplate
 from models.llm_clients import LlmUtils
 from datetime import datetime
+from pathlib import Path
+from PIL import Image
 import requests
 import json
 import os
@@ -12,21 +14,6 @@ model = os.getenv('GPT_IMAGES_DEPLOYMENT_NAME')
 images_folder = os.getcwd() + "\\assets\\generated_images"
 
 class ImageGenerator:
-
-    def regenerate_prompt(self, prompt:str) -> str:
-
-        template = """You are a smart assistant that re-write prompts so they can be used to generate images by the dalle-3 model.
-        Your job is to take the following input and re-create a new prompt as an image description for the dalle model
-
-        ### Prompt ###
-        {prompt}
-        """
-
-        prompt_template = PromptTemplate.from_template(template)
-        chain  = prompt_template | llm
-        new_prompt = chain.invoke({"prompt": prompt})
-
-        return new_prompt.content
 
     def generate_images(prompt: str):
         """Generate images, diagrams, charts, etc., based on prompts"""
@@ -48,7 +35,15 @@ class ImageGenerator:
         image = requests.get(image_url).content
         image_name = f"genai_img_{uuid4()}"
 
-        with open(os.path.join(images_folder, images_path, f"{image_name}.jpg"), 'wb') as handler:
+        image_local_path = os.path.join(images_folder, images_path, f"{image_name}.jpg")
+        with open(image_local_path, 'wb') as handler:
             handler.write(image)
         
+        # save thumbnail
+        outfile = f"{Path(image_local_path).stem}_thumbnail.jpg"
+        img = Image.open(image_local_path)
+        size = 500,500
+        img.thumbnail(size, Image.Resampling.LANCZOS)    
+        img.save(os.path.join(images_folder,images_path,  outfile), "JPEG")    
+
         return image_url
