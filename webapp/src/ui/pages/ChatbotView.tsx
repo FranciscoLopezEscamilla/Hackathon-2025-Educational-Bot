@@ -7,10 +7,12 @@ import { showSuccessToast } from "../utils/toast";
 import { useChatStore } from "../state/chatStore";
 import { useChatbotHistory } from "../hooks/useChatbotHistory";
 import { useChatbotActions } from "../hooks/useChatbotActions";
+import { useFolderContent } from "../hooks/useFolderContent";
 
 const ChatbotView = () => {
   const { id: paramId } = useParams({ strict: false });
   const { messages } = useChatStore();
+  const { projectContent, myContent } = useFolderContent();
 
   useChatbotHistory(paramId);
 
@@ -31,7 +33,12 @@ const ChatbotView = () => {
           </div>
         </div>
         <div className="p-4 h-full overflow-y-auto scroll-p-4 ">
-          <ContentList folders={[]} />
+          <ContentList
+            folders={[
+              { id: 1, name: "My Content", files: myContent },
+              { id: 2, name: "NebulaCore Project", files: projectContent },
+            ]}
+          />
         </div>
         <div className="text-md border-t-1 text-gray-400 border-zinc-700 p-4 flex flex-row gap-2 justify-between">
           <span>Source of information for the chatbot.</span>

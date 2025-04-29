@@ -7,7 +7,12 @@ export interface AuthenticationState {
 export interface FolderItem {
   id: number;
   name: string;
-  files: string[];
+  files: BlobFile[];
+}
+
+export interface BlobFile {
+  name: string;
+  url: string;
 }
 
 export interface FileItem {
