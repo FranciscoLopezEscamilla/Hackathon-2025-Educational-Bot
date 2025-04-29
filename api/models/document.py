@@ -23,3 +23,10 @@ class DocumentMetadata(BaseModel):
 class RampUpdDocuments(BaseModel):
     generated_files: Optional[List[DocumentMetadata]]
     indexed_files : Optional[List[DocumentMetadata]]
+
+class PptRequest(BaseModel):
+    title:str
+    header: str
+    headerContent: str
+    subheader: str
+    subheaderContent: str

@@ -1,19 +1,10 @@
-from models.document import DocumentContent, DocumentRequest, TextItem
+from models.document import DocumentContent, DocumentRequest, TextItem, PptRequest
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
 from models.llm_clients import LlmUtils
-from pydantic import BaseModel
-import json
 llm = LlmUtils.llm
 
-class SampleRequest(BaseModel):
-    title:str
-    header: str
-    headerContent: str
-    subheader: str
-    subheaderContent: str
-
-parser = JsonOutputParser(pydantic_object=SampleRequest)
+parser = JsonOutputParser(pydantic_object=PptRequest)
 
 def create_sample_request(text):
     """Create sample request for generate ppt files"""
