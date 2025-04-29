@@ -1,9 +1,25 @@
 from pydantic import BaseModel
+from typing import List, Optional
 
-class Document(BaseModel):
-    title: str
+class TextItem(BaseModel): 
+    type: str # "title", "subtitle", "paragraph" 
     content: str
 
-class DocumentPost(BaseModel):
+class DocumentContent(BaseModel):
+    text_items: Optional[List[TextItem]] = []
+    images: Optional[List[str]] = []
+
+class DocumentRequest(BaseModel):
     title: str
-    content: str
+    pages: List[DocumentContent]
+
+class ImageItem(BaseModel):
+    path: str
+
+class DocumentMetadata(BaseModel):
+    name: str
+    url: str
+
+class RampUpdDocuments(BaseModel):
+    generated_files: Optional[List[DocumentMetadata]]
+    indexed_files : Optional[List[DocumentMetadata]]

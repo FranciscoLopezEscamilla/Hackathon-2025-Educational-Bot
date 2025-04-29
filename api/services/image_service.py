@@ -1,6 +1,8 @@
 from langchain_core.prompts import PromptTemplate
 from models.llm_clients import LlmUtils
 from datetime import datetime
+from pathlib import Path
+from PIL import Image
 import requests
 import json
 import os
@@ -48,7 +50,15 @@ class ImageGenerator:
         image = requests.get(image_url).content
         image_name = f"genai_img_{uuid4()}"
 
-        with open(os.path.join(images_folder, images_path, f"{image_name}.jpg"), 'wb') as handler:
+        image_local_path = os.path.join(images_folder, images_path, f"{image_name}.jpg")
+        with open(image_local_path, 'wb') as handler:
             handler.write(image)
         
+        # save thumbnail
+        outfile = f"{Path(image_local_path).stem}_thumbnail.jpg"
+        img = Image.open(image_local_path)
+        size = 500,500
+        img.thumbnail(size, Image.Resampling.LANCZOS)    
+        img.save(os.path.join(images_folder,images_path,  outfile), "JPEG")    
+
         return image_url
