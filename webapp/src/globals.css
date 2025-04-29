@@ -1,0 +1,69 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+/* Scrollbar Track */
+::-webkit-scrollbar {
+  width: 16px; /* Adjust width */
+}
+
+/* Scrollbar Thumb */
+::-webkit-scrollbar-thumb {
+  background: #444; /* Dark gray thumb */
+  border-radius: 8px; /* Rounded corners */
+  border: 4px solid transparent;
+  background-clip: content-box;
+}
+
+/* Scrollbar Thumb on Hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #666; /* Slightly lighter gray */
+  border: 4px solid transparent;
+  background-clip: content-box;
+}
+
+/* Scrollbar Track */
+::-webkit-scrollbar-track {
+  width: 20px; /* Adjust width */
+}
+
+:root {
+  background-color: var(--color-zinc-900);
+  box-sizing: border-box;
+  /* scrollbar-gutter: stable; */
+  /* overflow: hidden; */
+}
+
+.gutter-stable {
+  scrollbar-gutter: stable;
+}
+
+.wrapped-text-markdown {
+  p {
+    overflow-wrap: break-word;
+  }
+}
+
+.formatted-anchor {
+  a {
+    color: yellow;
+    font-weight: 700;
+  }
+}
+
+@keyframes typing-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(0.1em);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.typing span {
+  opacity: 0;
+  display: inline-block;
+  will-change: opacity, transform; /* hint to compositor */
+  animation: typing-reveal 0.1s ease forwards;
+  animation-delay: var(--delay);
+}

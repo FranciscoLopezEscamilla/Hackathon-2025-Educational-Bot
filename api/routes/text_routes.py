@@ -1,9 +1,30 @@
-from fastapi import APIRouter, HTTPException
-from services.text_service import hello_world
+# from fastapi import APIRouter, HTTPException
+# from services.text_service import TextGenerator
+# from services.index_service import Database
+# from models.query import Query, Summary
+# import logging
+# import json
 
-router = APIRouter()
+# logger = logging.getLogger(__name__)
 
-@router.get("/text-generator", response_model=str)
-async def simple_text():
-    name = "pedro"
-    return hello_world(name)
+# router = APIRouter(prefix="/text", tags=["Text"])
+
+# @router.post("/summarize")
+# def summarize_content(request: Query):
+    
+#     context_from_index = Database.query_index(request.query)
+
+#     sum_text : str = TextGenerator.summarize_text(context=context_from_index, query = request.query)
+
+#     clean_text: str = TextGenerator.parse_text(sum_text)
+
+#     return clean_text
+
+# @router.post("/descriptions")
+# def generate_descriptions(request: Summary):
+
+#     output: str = TextGenerator.generate_image_descriptions(text = request)
+
+#     clean_text: str = TextGenerator.parse_text(output)
+
+#     return clean_text
