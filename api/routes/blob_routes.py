@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from services.blob_service import BlobService
-from models.document import DocumentMetadata, RampUpdDocuments
+from models.document import RampUpdDocuments
 from services.index_service import Database
 
 router = APIRouter(prefix="/storage_account")
