@@ -23,9 +23,6 @@ const ConversationalChat = ({
   showToast,
   inputRef,
 }: IProps) => {
-  const [selectedAvailableTools, setSelectedAvailableTools] = useState<
-    string[]
-  >([]);
   const [uploadedFiles, setUploadedFiles] = useState<FileList | null>(null);
   const chatHistory = useChatStore((state) => state.messages);
   const scrollRef = useRef<HTMLInputElement>(null);
@@ -36,16 +33,6 @@ const ConversationalChat = ({
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [chatHistory]);
-
-  const handleToggleAvailableTools = (tool: string) => {
-    if (selectedAvailableTools.includes(tool)) {
-      setSelectedAvailableTools(
-        selectedAvailableTools.filter((t) => t !== tool)
-      );
-    } else {
-      setSelectedAvailableTools([...selectedAvailableTools, tool]);
-    }
-  };
 
   const getFilesList = () => {
     const files = filesRef.current?.files || null;
@@ -82,6 +69,9 @@ const ConversationalChat = ({
 
     removeFiles();
   };
+
+  const toolClass =
+    "bg-zinc-800 text-gray-300 p-2 px-4 border-1 border-zinc-600 rounded-md hover:bg-zinc-700 transition-all cursor-pointer select-none";
 
   return (
     <div className="w-full h-full flex flex-col min-h-0 grow gap-2 justify-center items-center">
@@ -214,22 +204,24 @@ const ConversationalChat = ({
         <div className="w-full">Available Tools:</div>
         <div className="flex flex-row gap-2 ">
           <div
-            className={`${selectedAvailableTools.includes("Image Generation") ? "bg-zinc-700 text-cyan-500" : "bg-zinc-800 text-gray-300"} p-2 px-4 border-1 border-zinc-600 rounded-md hover:bg-zinc-700 transition-all cursor-pointer select-none`}
-            onClick={() => handleToggleAvailableTools("Image Generation")}
+            className={toolClass}
           >
             Image Generation
           </div>{" "}
           <div
-            className={`${selectedAvailableTools.includes("Diagram Generation") ? "bg-zinc-700 text-cyan-500" : "bg-zinc-800 text-gray-300"} p-2 px-4 border-1 border-zinc-600 rounded-md hover:bg-zinc-700 transition-all cursor-pointer select-none`}
-            onClick={() => handleToggleAvailableTools("Diagram Generation")}
+            className={toolClass}
           >
             Diagram Generation
           </div>
           <div
-            className={`${selectedAvailableTools.includes("Content Writer") ? "bg-zinc-700 text-cyan-500" : "bg-zinc-800 text-gray-300"} p-2 px-4 border-1 border-zinc-600 rounded-md hover:bg-zinc-700 transition-all cursor-pointer select-none`}
-            onClick={() => handleToggleAvailableTools("Content Writer")}
+            className={toolClass}
           >
             PDF Writer
+          </div>
+          <div
+            className={toolClass}
+          >
+            Slider Generation
           </div>
         </div>
       </div>

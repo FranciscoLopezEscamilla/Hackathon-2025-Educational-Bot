@@ -1,4 +1,3 @@
-import MagnifyingGlass from "@/assets/MagnifyingGlass";
 import ContentList from "@/ui/components/ContentList";
 import ConversationalChat from "@/ui/components/ConversationalChat";
 import PromptSuggestionList from "@/ui/components/PromptSuggestionList";
@@ -28,9 +27,10 @@ const ChatbotView = () => {
       <aside className=" bg-zinc-800 rounded-l-xl border-r-1 border-zinc-700 flex flex-col w-2/9 min-w-70 ">
         <div className="flex justify-between items-center p-4 border-b-1 text-gray-400 border-zinc-700  font-semibold">
           <header className="text-2xl">Sources</header>
-          <div className="cursor-pointer hover:text-gray-50 p-2 hover:bg-zinc-700 rounded-md transition-all select-none">
+          {/* TODO: Search Feature */}
+          {/* <div className="cursor-pointer hover:text-gray-50 p-2 hover:bg-zinc-700 rounded-md transition-all select-none">
             <MagnifyingGlass />
-          </div>
+          </div> */}
         </div>
         <div className="p-4 h-full overflow-y-auto scroll-p-4 ">
           <ContentList

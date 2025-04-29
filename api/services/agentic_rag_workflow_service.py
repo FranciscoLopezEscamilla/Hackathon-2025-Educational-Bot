@@ -14,7 +14,7 @@ from services.document_service import PptGenerator
 from models.document import DocumentRequest, DocumentContent, TextItem, ImageItem
 from models.ppt_payload import create_sample_request
 
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 
 MAX_ITERATIONS = 3  # Maximum number of refinement iterations allowed
 
@@ -130,7 +130,7 @@ class AgenticRAGWorkflow:
             content = response
             
         print("ENTERED PDF GENERATION")
-        logging.info(f"Generated PDF Title: {title}")
+        # logging.info(f"Generated PDF Title: {title}")
         pdf_file = DocumentGenerator.create(title=title, content=content)
         blob_url = BlobService.upload_file(pdf_file, title)    
 
@@ -192,7 +192,7 @@ class AgenticRAGWorkflow:
         - pdf_service: Generates new, structured PDF documents (only if explicitly requested by the user, such as 'create a PDF', 'export as PDF', or similar).
         - diagram_service: Produces conceptual diagrams or visualizations from context and queries.
         - powerpoint_service: Generates PowerPoint presentations based on user queries and context.
-        - RAG (Retrieval-Augmented Generation): Retrieves relevant information from a knowledge base about ART USING GEN AI.
+        - RAG (Retrieval-Augmented Generation): Retrieves relevant information from a knowledge base about NebulaCore Project.
 
         Workflow state flags you can use:
         - has_uploaded_pdf: True if the user uploaded a file.
@@ -209,7 +209,7 @@ class AgenticRAGWorkflow:
 
         Instructions:
         1. Decide if this is a simple greeting (set simple_response and skip_to_response if so).
-        2. Decide if you need to pull external context from RAG (rag_context). RAG contains information related to ART USING GEN AI.
+        2. Decide if you need to pull external context from RAG (rag_context). RAG contains information related to NebulaCore Project.
         3. If the user query is related to art, generative AI, or could benefit from external knowledge, you SHOULD pull RAG context.
         4. Select which tools to use (text_service, image_service, pdf_service, diagram_service) and explain why.
         5. If the user uploaded a PDF, use its content for context.
@@ -262,7 +262,7 @@ class AgenticRAGWorkflow:
         results = state.get("tool_responses", {}) if state.get("iteration_count", 0) > 1 else {}
         pdf_generated = state.get("pdf_generated", False)
 
-        logging.info(f"Executing tools. Iteration: {state.get('iteration_count', 0)}")
+        # logging.info(f"Executing tools. Iteration: {state.get('iteration_count', 0)}")
 
         for t in state.get("needed_tools", []):
             if t == "text_service":
@@ -309,7 +309,7 @@ class AgenticRAGWorkflow:
             state["skip_to_response"] = True
             return state
 
-        logging.info(f"Quality check iteration: {state.get('iteration_count', 0)}")
+        # logging.info(f"Quality check iteration: {state.get('iteration_count', 0)}")
 
         responses = []
         for tool_name, r in state.get("tool_responses", {}).items():
@@ -384,7 +384,7 @@ class AgenticRAGWorkflow:
                 context_sections.append(f"**Generated PDF:**\n\n[📄 Download PDF]({r['content']})")
             elif r["type"] == "diagram" and r.get("content"):
                 context_sections.append(f"**Generated diagram:**\n\n![Diagram]({r['content']})\n\n[View Diagram]({r['content']})")
-            elif r["type"] == "powerpoint" and r.get("content"):
+            elif r["type"] == "pptx" and r.get("content"):
                 context_sections.append(f"**Generated powerpoint:** \n\n![Diagram]({r['content']})\n\n[View Diagram]({r['content']})")
         
         context = "\n\n---\n\n".join(context_sections)
