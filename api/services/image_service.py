@@ -15,21 +15,6 @@ images_folder = os.getcwd() + "\\assets\\generated_images"
 
 class ImageGenerator:
 
-    def regenerate_prompt(self, prompt:str) -> str:
-
-        template = """You are a smart assistant that re-write prompts so they can be used to generate images by the dalle-3 model.
-        Your job is to take the following input and re-create a new prompt as an image description for the dalle model
-
-        ### Prompt ###
-        {prompt}
-        """
-
-        prompt_template = PromptTemplate.from_template(template)
-        chain  = prompt_template | llm
-        new_prompt = chain.invoke({"prompt": prompt})
-
-        return new_prompt.content
-
     def generate_images(prompt: str):
         """Generate images, diagrams, charts, etc., based on prompts"""
 

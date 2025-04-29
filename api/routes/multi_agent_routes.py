@@ -1,5 +1,4 @@
 from fastapi import APIRouter, File, UploadFile, Form
-from services.multi_agent_service import MultiAgent
 from models.query import Query
 from services.rag_service import RAG
 from services.agentic_rag_workflow_service import AgenticRAGWorkflow
