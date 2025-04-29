@@ -1,6 +1,6 @@
-# AI-SSISTANT
+# RampUp AI
 
-Hackaton 2025 - Educational Bot
+Hackaton 2025 - Wise assistant for project knowledge
 
 ## 🌍 Problem
 

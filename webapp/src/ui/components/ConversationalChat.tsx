@@ -74,13 +74,13 @@ const ConversationalChat = ({
     }
     formData.append("message_history", JSON.stringify(chatHistory));
 
-    // Debug: inspect contents
     for (const [key, val] of formData.entries()) {
       console.log(key, val);
     }
 
-    // Send to backend
     handleOnSubmitForm(formData);
+
+    removeFiles();
   };
 
   return (
@@ -142,7 +142,7 @@ const ConversationalChat = ({
       )}
       {chatHistory.length === 0 && (
         <h1 className="text-2xl font-semibold">
-          Welcome to ABC Project, francisco.lopez
+          Welcome to NebulaCore Project
         </h1>
       )}
       {/* message box */}
@@ -158,8 +158,6 @@ const ConversationalChat = ({
             placeholder="Type your message here..."
             ref={inputRef}
             itemRef="input"
-            // value={message}
-            // onChange={(e) => handleChangeMessage(e.target.value)}
             required
           />
         </form>
@@ -181,10 +179,6 @@ const ConversationalChat = ({
                 Attach files
               </label>
             </span>
-            {/* <button className=" text-white rounded-md transition-all select-none flex justify-between items-center gap-1 cursor-pointer hover:text-zinc-400">
-              <ImageIcon size="16" />
-              Use Image
-            </button> */}
           </span>
           <button
             type="submit"
@@ -202,7 +196,6 @@ const ConversationalChat = ({
                 return (
                   <div className="flex" key={lastModified}>
                     <p className="text-gray-400 truncate max-w-20">{name}</p>
-                    {/* <p className="text-gray-400 truncate">.{extension}</p> */}
                   </div>
                 );
               })}
@@ -236,7 +229,7 @@ const ConversationalChat = ({
             className={`${selectedAvailableTools.includes("Content Writer") ? "bg-zinc-700 text-cyan-500" : "bg-zinc-800 text-gray-300"} p-2 px-4 border-1 border-zinc-600 rounded-md hover:bg-zinc-700 transition-all cursor-pointer select-none`}
             onClick={() => handleToggleAvailableTools("Content Writer")}
           >
-            Content Writer
+            PDF Writer
           </div>
         </div>
       </div>

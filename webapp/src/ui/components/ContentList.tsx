@@ -8,7 +8,7 @@ interface IProps {
 
 const ContentList = ({ folders = [] }: IProps) => {
   const [activeCategories, setActiveCategories] = useState<string[]>(
-    folders[0] ? [folders[0].name] : ["ABC Project"]
+    folders[0] ? [folders[0].name] : ["NebulaCore Project"]
   );
 
   const handleCategoryClick = (category: string) => {
@@ -22,14 +22,14 @@ const ContentList = ({ folders = [] }: IProps) => {
   return (
     <div className="flex flex-col gap-2">
       <div
-        onClick={() => handleCategoryClick("ABC Project")}
+        onClick={() => handleCategoryClick("NebulaCore Project")}
         className="flex flex-row items-center gap-2 cursor-pointer hover:bg-zinc-700 p-2 rounded-md transition-all select-none border-1 border-transparent hover:border-zinc-600"
       >
         <FolderIcon />
-        <span className="font-semibold">ABC Project</span>
+        <span className="font-semibold">NebulaCore Project</span>
       </div>
       <ul
-        className={`flex flex-col gap-2 pl-4 text-gray-400 ${activeCategories.includes("ABC Project") ? "block" : "hidden"}`}
+        className={`flex flex-col gap-2 pl-4 text-gray-400 ${activeCategories.includes("NebulaCore Project") ? "block" : "hidden"}`}
       >
         <li>Report_Q1_2024.pdf</li>
         <li>Invoice_34567.xlsx</li>

@@ -2,133 +2,24 @@ import MagnifyingGlass from "@/assets/MagnifyingGlass";
 import ContentList from "@/ui/components/ContentList";
 import ConversationalChat from "@/ui/components/ConversationalChat";
 import PromptSuggestionList from "@/ui/components/PromptSuggestionList";
-import { useEffect, useRef, useState } from "react";
-import { useChatStore } from "../state/chatStore";
-import { historyStore } from "../state/historyStore";
+import { useParams } from "@tanstack/react-router";
 import { showSuccessToast } from "../utils/toast";
-import { useNavigate, useParams } from "@tanstack/react-router";
-import { loadHistory, saveHistory } from "../utils/persistentStorage";
-import { callToAgent } from "@/infrastructure/api/agent";
+import { useChatStore } from "../state/chatStore";
+import { useChatbotHistory } from "../hooks/useChatbotHistory";
+import { useChatbotActions } from "../hooks/useChatbotActions";
 
 const ChatbotView = () => {
   const { id: paramId } = useParams({ strict: false });
-  const [loadingChatResponse, setLoadingChatResponse] =
-    useState<boolean>(false);
-  const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  const navigate = useNavigate();
+  const { messages } = useChatStore();
+
+  useChatbotHistory(paramId);
 
   const {
-    addMessageToChat,
-    removeMessagesFromChat,
-    messages,
-    id,
-    setId,
-    loadState,
-  } = useChatStore();
-  const { setHistory, chats } = historyStore();
-
-  const handleChangeMessage = (value: string) => {
-    if (inputRef.current) {
-      inputRef.current.value = value;
-    }
-  };
-
-  const handleOnSubmitForm = async (formData: FormData) => {
-    const randomUUID = crypto.randomUUID();
-    const isFirstMessage = messages.length === 0;
-    const message = formData.get("query") as string;
-
-    handleChangeMessage("");
-    addMessageToChat({
-      id: crypto.randomUUID(),
-      content: message,
-      type: "user",
-    });
-
-    setLoadingChatResponse(true);
-
-    try {
-      const response = await callToAgent(formData);
-      addMessageToChat({
-        id: crypto.randomUUID(),
-        content: response.messages[response.messages.length - 1].content,
-        type: "assistant",
-      });
-    } catch (error) {
-      console.log(error);
-      addMessageToChat({
-        id: crypto.randomUUID(),
-        content: "Sorry, I couldn't understand your message.",
-        type: "assistant",
-      });
-    } finally {
-      setLoadingChatResponse(false);
-      if (isFirstMessage) {
-        setId(randomUUID);
-        navigate({ to: `/${randomUUID}` });
-      }
-    }
-  };
-
-  useEffect(() => {
-    loadHistory().then((history) => {
-      setHistory(history);
-    });
-
-    return () => {
-      //reset the state when the component is unmounted
-      loadState({
-        messages: [],
-        id: null,
-        updatedAt: new Date().toISOString(),
-      });
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const newChatsState = [...chats];
-
-    if (id && messages.length > 0) {
-      const foundChatIndex = newChatsState.findIndex((chat) => chat.id === id);
-      if (foundChatIndex !== -1) {
-        newChatsState[foundChatIndex].messages = messages;
-        saveHistory({
-          chats: newChatsState,
-          user: null,
-        });
-      } else {
-        newChatsState.push({
-          id,
-          updatedAt: new Date().toISOString(),
-          messages,
-        });
-        saveHistory({
-          chats: newChatsState,
-          user: null,
-        });
-      }
-    }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, id]);
-
-  const reSendLastMessage = () => {
-    removeMessagesFromChat(2);
-    const lastMessage = messages[messages.length - 2];
-    const formData = new FormData();
-    formData.append("query", lastMessage.content);
-    handleOnSubmitForm(formData);
-  };
-
-  useEffect(() => {
-    if (paramId && chats.length > 0) {
-      const foundChatIndex = chats.findIndex((chat) => chat.id === paramId);
-      if (foundChatIndex !== -1) {
-        loadState(chats[foundChatIndex]);
-      }
-    }
-  }, [paramId, chats, loadState]);
+    inputRef,
+    loadingChatResponse,
+    handleOnSubmitForm,
+    reSendLastMessage,
+  } = useChatbotActions();
 
   return (
     <>
