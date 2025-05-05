@@ -4,7 +4,7 @@ Hackaton 2025 - Wise assistant for project knowledge
 
 ## 🌍 Problem
 
-Despite comprehensive documentation and processes, consultants still struggle to find critical project information quickly and face delayed or unanswered queries, leading to frustration and knowledge gaps. Inconsistent, impersonal training and staggered start dates make delivering a cohesive, personalized onboarding experience time-consuming and error-prone.
+Despite comprehensive documentation and processes, new joiners still struggle to find critical project information quickly and face delayed or unanswered queries, leading to frustration and knowledge gaps. Inconsistent, impersonal training and staggered start dates make delivering a cohesive, personalized onboarding experience time-consuming and error-prone.
 
 ## 💡 Solution
 
@@ -26,7 +26,7 @@ An AI‐driven, retrieval-augmented chatbot ingests all onboarding materials and
 
 ## 🎬 Demo
 
-- **Live Demo: (To Be Confirmed)** [Link Here](#)
+- **Live Demo:** [RampUp AI](https://rampup-ai-api.vercel.app/)
 - **Video walkthrough: (WIP)** [Link Here](#)
 
 ---
