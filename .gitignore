@@ -4,3 +4,4 @@ __pycache__/
 output/
 index_documents/
 .vscode
+api\\assets\\generated_images/
